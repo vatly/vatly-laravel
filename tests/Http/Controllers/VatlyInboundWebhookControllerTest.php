@@ -122,7 +122,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
                 string $resourceId,
                 string $resourceName,
                 array $payload,
-                DateTimeImmutable $raisedAt,
+                \DateTimeInterface $raisedAt,
                 bool $testmode,
                 ?string $vatlyCustomerId = null,
             ): void {
@@ -135,6 +135,11 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
                     'testmode' => $testmode,
                     'vatlyCustomerId' => $vatlyCustomerId,
                 ];
+            }
+
+            public function cleanUp(int $days = 7): int
+            {
+                return 0;
             }
         };
     }

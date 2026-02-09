@@ -30,11 +30,20 @@ class SubscriptionWasStartedAtVatly extends BaseAtVatlyEvent
             customerId: $callReceived->object['data']['customerId'],
             subscriptionId: $callReceived->resourceId,
             planId: $callReceived->object['data']['subscriptionPlanId'],
-            type: Subscription::DEFAULT_TYPE,
+            type: self::resolveSubscriptionType($callReceived),
             name: $callReceived->object['data']['name'],
             quantity: $callReceived->object['data']['quantity'],
-
-            //type: $callReceived->object['metadata']['vatly_laravel']['subscription_type'], // TODO dynamic type
         );
+    }
+
+    /**
+     * Resolve the subscription type from metadata or fall back to default.
+     */
+    private static function resolveSubscriptionType(VatlyWebhookCallReceived $callReceived): string
+    {
+        $metadata = $callReceived->object['metadata'] ?? [];
+        $vatlyLaravelMeta = $metadata['vatly_laravel'] ?? [];
+
+        return $vatlyLaravelMeta['subscription_type'] ?? Subscription::DEFAULT_TYPE;
     }
 }
