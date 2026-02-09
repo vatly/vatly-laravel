@@ -144,14 +144,52 @@ class Subscription extends Model implements SubscriptionInterface
         throw FeatureUnavailableException::notImplementedOnApi();
     }
 
-    public function updatePaymentMethodUrl(): string
+    /**
+     * Get the URL where the customer can update their payment method.
+     */
+    public function updatePaymentMethodUrl(array $prefillData = []): string
     {
-        throw FeatureUnavailableException::notImplementedOnSdk();
+        /** @var \Vatly\Actions\GetPaymentMethodUpdateUrl $action */
+        $action = app()->make(\Vatly\Actions\GetPaymentMethodUpdateUrl::class);
+        $response = $action->execute($this->vatly_id, $prefillData);
+
+        return $response->url;
     }
 
+    /**
+     * Sync the local subscription with the current state at Vatly.
+     *
+     * Fetches fresh data from the Vatly API and updates the local model.
+     */
     public function sync(): self
     {
-        throw FeatureUnavailableException::notImplementedOnSdk();
+        /** @var \Vatly\Actions\GetSubscription $action */
+        $action = app()->make(\Vatly\Actions\GetSubscription::class);
+        $response = $action->execute($this->vatly_id);
+
+        $updates = [
+            'plan_id' => $response->planId,
+            'name' => $response->name,
+            'quantity' => $response->quantity,
+        ];
+
+        // Determine ends_at from API response
+        if ($response->endedAt !== null) {
+            $updates['ends_at'] = Carbon::parse($response->endedAt);
+        } elseif ($response->cancelledAt !== null) {
+            // Subscription is cancelled but may still be in grace period
+            // The actual end date would be set via webhook, but we can note it's cancelled
+            $updates['ends_at'] = $this->ends_at ?? Carbon::parse($response->cancelledAt);
+        }
+
+        // Sync trial end date if present
+        if ($response->trialEndAt !== null) {
+            $updates['trial_ends_at'] = Carbon::parse($response->trialEndAt);
+        }
+
+        $this->update($updates);
+
+        return $this;
     }
 
     /**
