@@ -1,0 +1,60 @@
+{
+    "name": "vatly/vatly-laravel",
+    "description": "Laravel integration for Vatly, inspired by Laravel Cashier",
+    "keywords": ["vatly", "laravel", "subscriptions", "billing"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sander van Hooft",
+            "email": "sander@vanhooft.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/contracts": "^10.0|^11.0",
+        "illuminate/database": "^10.0|^11.0",
+        "illuminate/http": "^10.0|^11.0",
+        "illuminate/routing": "^10.0|^11.0",
+        "illuminate/support": "^10.0|^11.0",
+        "vatly/vatly-fluent-php": "dev-main"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0",
+        "pestphp/pest": "^2.0"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../vatly-fluent-php"
+        },
+        {
+            "type": "vcs",
+            "url": "git@github.com:sandervanhooft/vatly-api-php.git"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Vatly\\Laravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Vatly\\Laravel\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Vatly\\Laravel\\VatlyServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

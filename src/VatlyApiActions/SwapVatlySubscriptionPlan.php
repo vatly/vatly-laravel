@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Vatly\Laravel\VatlyApiActions;
+
+class SwapVatlySubscriptionPlan extends BaseVatlyApiAction
+{
+    public function execute(
+        string $subscriptionId,
+        string $newPlanId,
+        array $parameters = [],
+    ): SwapVatlySubscriptionPlanResponse {
+        $response = $this->vatlyApiClient->subscriptions->swap($subscriptionId, $newPlanId, $parameters);
+
+        return SwapVatlySubscriptionPlanResponse::fromApiResponse($response);
+    }
+}
