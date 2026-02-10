@@ -134,9 +134,19 @@ class Subscription extends Model implements SubscriptionInterface
         return $this;
     }
 
-    public function swapAndInvoice(): self
+    /**
+     * Swap to a new plan and invoice immediately.
+     *
+     * This applies the plan change immediately and creates an invoice
+     * for any prorated charges right away.
+     */
+    public function swapAndInvoice(string $type, string $planId, array $options = []): self
     {
-        throw FeatureUnavailableException::notImplementedOnSdk();
+        // Force immediate application and invoicing
+        $options['applyImmediately'] = true;
+        $options['invoiceImmediately'] = true;
+
+        return $this->swap($type, $planId, $options);
     }
 
     public function resume(): self
