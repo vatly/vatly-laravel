@@ -1,0 +1,78 @@
+# Getting Started
+
+Vatly Laravel provides a Cashier-like integration for [Vatly](https://vatly.com) billing in your Laravel application. It handles subscriptions, checkouts, customers, webhooks, and payment method updates.
+
+## Requirements
+
+- PHP 8.2+
+- Laravel 11 or 12
+- A Vatly API key
+
+## Installation
+
+```bash
+composer require vatly/vatly-laravel:v0.1.0-alpha.2
+```
+
+> **Note:** This is an alpha release. Pin to an exact version to avoid breaking changes.
+
+## Configuration
+
+Publish the config file:
+
+```bash
+php artisan vendor:publish --tag=vatly-config
+```
+
+Add your credentials to `.env`:
+
+```env
+VATLY_KEY=test_xxxxxxxxxxxxxxxxxxxx
+VATLY_WEBHOOK_SECRET=your-webhook-secret
+VATLY_REDIRECT_URL_SUCCESS=https://your-app.com/checkout/success
+VATLY_REDIRECT_URL_CANCELED=https://your-app.com/checkout/canceled
+```
+
+### Available config options
+
+| Key | Env variable | Default |
+| --- | --- | --- |
+| `api_key` | `VATLY_KEY` | (required) |
+| `api_url` | `VATLY_API_URL` | `https://api.vatly.com` |
+| `api_version` | `VATLY_API_VERSION` | `v1` |
+| `webhook_secret` | `VATLY_WEBHOOK_SECRET` | (required for webhooks) |
+| `testmode` | `VATLY_TESTMODE` | `false` |
+| `billable_model` | `VATLY_BILLABLE_MODEL` | `App\Models\User` |
+| `redirect_url_success` | `VATLY_REDIRECT_URL_SUCCESS` | (required for checkouts) |
+| `redirect_url_canceled` | `VATLY_REDIRECT_URL_CANCELED` | (required for checkouts) |
+
+## Database setup
+
+Publish and run the migrations:
+
+```bash
+php artisan vendor:publish --tag=vatly-billable-migrations
+php artisan vendor:publish --tag=vatly-migrations
+php artisan migrate
+```
+
+This creates:
+- A `vatly_id` column on your users table
+- A `vatly_subscriptions` table
+- A `vatly_webhook_calls` table
+
+## Billable model
+
+Add the `Billable` trait and implement `BillableInterface` on your User model:
+
+```php
+use Vatly\Contracts\BillableInterface;
+use Vatly\Laravel\Billable;
+
+class User extends Authenticatable implements BillableInterface
+{
+    use Billable;
+}
+```
+
+This gives your User model access to all Vatly billing methods: customer management, subscriptions, checkouts, and orders.
