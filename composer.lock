@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "34ba5395256b036eb32bdc584a859d53",
+    "content-hash": "a5dccb5f2e5fff05da5058466f98b26e",
     "packages": [
         {
             "name": "brick/math",
@@ -5792,12 +5792,12 @@
             "source": {
                 "type": "git",
                 "url": "git@github.com:Vatly/vatly-fluent-php.git",
-                "reference": "74161a384795627bc16d8ad118114a68738287c3"
+                "reference": "144bedcb27c12ae07ec4bcb743434a4950c6a12b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Vatly/vatly-fluent-php/zipball/74161a384795627bc16d8ad118114a68738287c3",
-                "reference": "74161a384795627bc16d8ad118114a68738287c3",
+                "url": "https://api.github.com/repos/Vatly/vatly-fluent-php/zipball/144bedcb27c12ae07ec4bcb743434a4950c6a12b",
+                "reference": "144bedcb27c12ae07ec4bcb743434a4950c6a12b",
                 "shasum": ""
             },
             "require": {
@@ -5835,11 +5835,7 @@
                 "subscriptions",
                 "vatly"
             ],
-            "support": {
-                "source": "https://github.com/Vatly/vatly-fluent-php/tree/main",
-                "issues": "https://github.com/Vatly/vatly-fluent-php/issues"
-            },
-            "time": "2026-02-09T22:22:01+00:00"
+            "time": "2026-02-09T23:39:09+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
