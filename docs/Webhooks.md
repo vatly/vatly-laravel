@@ -7,7 +7,7 @@ Vatly sends webhooks to notify your application of events like subscription star
 The package registers a webhook endpoint at:
 
 ```
-POST /vatly/webhook
+POST /webhooks/vatly
 ```
 
 Configure this URL in your Vatly dashboard. Make sure to set your `VATLY_WEBHOOK_SECRET` in `.env`.
@@ -19,7 +19,7 @@ Exclude the webhook route from CSRF verification. In Laravel 11+, this is typica
 ```php
 ->withMiddleware(function (Middleware $middleware) {
     $middleware->validateCsrfTokens(except: [
-        'vatly/*',
+        'webhooks/vatly',
     ]);
 })
 ```
