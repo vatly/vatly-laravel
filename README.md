@@ -1,5 +1,9 @@
 # Vatly Laravel
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/vatly/vatly-laravel.svg?style=flat-square)](https://packagist.org/packages/vatly/vatly-laravel)
+[![Tests](https://github.com/Vatly/vatly-laravel/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/Vatly/vatly-laravel/actions/workflows/tests.yml)
+[![Total Downloads](https://img.shields.io/packagist/dt/vatly/vatly-laravel.svg?style=flat-square)](https://packagist.org/packages/vatly/vatly-laravel)
+
 > **Alpha release -- under active development. Expect breaking changes.**
 
 Laravel integration for [Vatly](https://vatly.com) billing, inspired by Laravel Cashier. Provides Eloquent models, a `Billable` trait, checkout/subscription builders, webhook handling, and event listeners.
