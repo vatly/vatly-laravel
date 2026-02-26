@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Listeners;
 
-use Vatly\Contracts\EventDispatcherInterface;
-use Vatly\Events\WebhookReceived;
-use Vatly\Webhooks\WebhookEventFactory;
+use Vatly\Fluent\Contracts\EventDispatcherInterface;
+use Vatly\Fluent\Events\WebhookReceived;
+use Vatly\Fluent\Webhooks\WebhookEventFactory;
 
 class CascadeVatlyWebhookEvents
 {

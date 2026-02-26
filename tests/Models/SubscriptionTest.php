@@ -6,7 +6,7 @@ namespace Vatly\Laravel\Tests\Models;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Vatly\Events\SubscriptionStarted;
+use Vatly\Fluent\Events\SubscriptionStarted;
 use Vatly\Laravel\Models\Subscription;
 use Vatly\Laravel\Tests\BaseTestCase;
 

@@ -7,11 +7,11 @@ namespace Vatly\Laravel\Tests\Http\Controllers;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use Vatly\Contracts\EventDispatcherInterface;
-use Vatly\Contracts\WebhookCallRepositoryInterface;
+use Vatly\Fluent\Contracts\EventDispatcherInterface;
+use Vatly\Fluent\Contracts\WebhookCallRepositoryInterface;
 use Vatly\Laravel\Http\Controllers\VatlyInboundWebhookController;
 use Vatly\Laravel\Tests\BaseTestCase;
-use Vatly\Webhooks\WebhookEventFactory;
+use Vatly\Fluent\Webhooks\WebhookEventFactory;
 
 class VatlyInboundWebhookControllerTest extends BaseTestCase
 {

@@ -70,6 +70,7 @@ class ComposerStaticInit34ba5395256b036eb32bdc584a859d53
         array (
             'Vatly\\Laravel\\Tests\\' => 20,
             'Vatly\\Laravel\\' => 14,
+            'Vatly\\Fluent\\' => 13,
             'Vatly\\' => 6,
         ),
         'T' =>
@@ -214,6 +215,10 @@ class ComposerStaticInit34ba5395256b036eb32bdc584a859d53
         array (
             'Brick\\Math\\' => 11,
         ),
+        'A' =>
+        array (
+            'App\\Models\\' => 11,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
@@ -243,10 +248,13 @@ class ComposerStaticInit34ba5395256b036eb32bdc584a859d53
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),
-        'Vatly\\' =>
+        'Vatly\\Fluent\\' =>
         array (
             0 => __DIR__ . '/..' . '/vatly/vatly-fluent-php/src',
-            1 => __DIR__ . '/..' . '/vatly/vatly-api-php/src',
+        ),
+        'Vatly\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/vatly/vatly-api-php/src',
         ),
         'TijsVerkoyen\\CssToInlineStyles\\' =>
         array (
@@ -629,6 +637,10 @@ class ComposerStaticInit34ba5395256b036eb32bdc584a859d53
         'Brick\\Math\\' =>
         array (
             0 => __DIR__ . '/..' . '/brick/math/src',
+        ),
+        'App\\Models\\' =>
+        array (
+            0 => __DIR__ . '/../..' . '/tests/Fixtures',
         ),
     );
 

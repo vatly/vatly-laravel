@@ -8,14 +8,14 @@ use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Vatly\Actions\CancelSubscription;
-use Vatly\Actions\SwapSubscriptionPlan;
-use Vatly\Contracts\BillableInterface;
-use Vatly\Contracts\SubscriptionInterface;
-use Vatly\Events\SubscriptionCanceledImmediately;
-use Vatly\Events\SubscriptionCanceledWithGracePeriod;
-use Vatly\Events\SubscriptionStarted;
-use Vatly\Exceptions\FeatureUnavailableException;
+use Vatly\Fluent\Actions\CancelSubscription;
+use Vatly\Fluent\Actions\SwapSubscriptionPlan;
+use Vatly\Fluent\Contracts\BillableInterface;
+use Vatly\Fluent\Contracts\SubscriptionInterface;
+use Vatly\Fluent\Events\SubscriptionCanceledImmediately;
+use Vatly\Fluent\Events\SubscriptionCanceledWithGracePeriod;
+use Vatly\Fluent\Events\SubscriptionStarted;
+use Vatly\Fluent\Exceptions\FeatureUnavailableException;
 use Vatly\Laravel\Repositories\EloquentCustomerRepository;
 
 /**
@@ -159,8 +159,8 @@ class Subscription extends Model implements SubscriptionInterface
      */
     public function updatePaymentMethodUrl(array $prefillData = []): string
     {
-        /** @var \Vatly\Actions\GetPaymentMethodUpdateUrl $action */
-        $action = app()->make(\Vatly\Actions\GetPaymentMethodUpdateUrl::class);
+        /** @var \Vatly\Fluent\Actions\GetPaymentMethodUpdateUrl $action */
+        $action = app()->make(\Vatly\Fluent\Actions\GetPaymentMethodUpdateUrl::class);
         $response = $action->execute($this->vatly_id, $prefillData);
 
         return $response->url;
@@ -173,8 +173,8 @@ class Subscription extends Model implements SubscriptionInterface
      */
     public function sync(): self
     {
-        /** @var \Vatly\Actions\GetSubscription $action */
-        $action = app()->make(\Vatly\Actions\GetSubscription::class);
+        /** @var \Vatly\Fluent\Actions\GetSubscription $action */
+        $action = app()->make(\Vatly\Fluent\Actions\GetSubscription::class);
         $response = $action->execute($this->vatly_id);
 
         $updates = [

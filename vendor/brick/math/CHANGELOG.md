@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.14.8](https://github.com/brick/math/releases/tag/0.14.8) - 2026-02-10
+
+🗑️ **Deprecations**
+
+- Method `BigInteger::testBit()` is deprecated, use `isBitSet()` instead
+
+✨ **New features**
+
+- New method: `BigInteger::isBitSet()` (replaces `testBit()`)
+- New method: `BigNumber::toString()` (alias of magic method `__toString()`)
+
+👌 **Improvements**
+
+- Performance optimization of `BigRational` comparison methods
+- More exceptions have been documented with `@throws` annotations
+
 ## [0.14.7](https://github.com/brick/math/releases/tag/0.14.7) - 2026-02-07
 
 ✨ **New features**

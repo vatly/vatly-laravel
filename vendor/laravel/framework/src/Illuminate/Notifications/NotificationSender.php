@@ -82,8 +82,6 @@ class NotificationSender
      */
     public function send($notifiables, $notification)
     {
-        $notifiables = $this->formatNotifiables($notifiables);
-
         if ($notification instanceof ShouldQueue) {
             return $this->queueNotification($notifiables, $notification);
         }
@@ -175,6 +173,10 @@ class NotificationSender
             $this->failedEventWasDispatched = false;
 
             throw $exception;
+        }
+
+        if (method_exists($notification, 'afterSending')) {
+            $notification->afterSending($notifiable, $channel, $response);
         }
 
         $this->events->dispatch(

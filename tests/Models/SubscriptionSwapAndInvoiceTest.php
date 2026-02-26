@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Vatly\Actions\SwapSubscriptionPlan;
-use Vatly\Actions\Responses\SwapSubscriptionPlanResponse;
+use Vatly\Fluent\Actions\SwapSubscriptionPlan;
+use Vatly\Fluent\Actions\Responses\SwapSubscriptionPlanResponse;
 use Vatly\Laravel\Models\Subscription;
 
 describe('swapAndInvoice', function () {

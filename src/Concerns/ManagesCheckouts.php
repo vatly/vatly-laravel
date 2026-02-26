@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Concerns;
 
-use Vatly\Actions\CreateCheckout;
-use Vatly\Builders\CheckoutBuilder;
-use Vatly\Builders\SubscriptionBuilder;
-use Vatly\Contracts\ConfigurationInterface;
+use Vatly\Fluent\Actions\CreateCheckout;
+use Vatly\Fluent\Builders\CheckoutBuilder;
+use Vatly\Fluent\Builders\SubscriptionBuilder;
+use Vatly\Fluent\Contracts\ConfigurationInterface;
 
 trait ManagesCheckouts
 {

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Vatly\Actions\GetPaymentMethodUpdateUrl;
-use Vatly\Actions\Responses\GetPaymentMethodUpdateUrlResponse;
+use Vatly\Fluent\Actions\GetPaymentMethodUpdateUrl;
+use Vatly\Fluent\Actions\Responses\GetPaymentMethodUpdateUrlResponse;
 use Vatly\Laravel\Models\Subscription;
 
 describe('updatePaymentMethodUrl', function () {

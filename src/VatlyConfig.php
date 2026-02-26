@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel;
 
-use Vatly\Contracts\ConfigurationInterface;
+use Vatly\Fluent\Contracts\ConfigurationInterface;
 
 class VatlyConfig implements ConfigurationInterface
 {

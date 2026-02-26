@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Carbon\Carbon;
-use Vatly\Actions\GetSubscription;
-use Vatly\Actions\Responses\GetSubscriptionResponse;
+use Vatly\Fluent\Actions\GetSubscription;
+use Vatly\Fluent\Actions\Responses\GetSubscriptionResponse;
 use Vatly\Laravel\Models\Subscription;
 
 beforeEach(function () {

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Repositories;
 
-use Vatly\Contracts\BillableInterface;
-use Vatly\Contracts\CustomerRepositoryInterface;
-use Vatly\Exceptions\InvalidCustomerException;
+use Vatly\Fluent\Contracts\BillableInterface;
+use Vatly\Fluent\Contracts\CustomerRepositoryInterface;
+use Vatly\Fluent\Exceptions\InvalidCustomerException;
 use Vatly\Laravel\VatlyConfig;
 
 class EloquentCustomerRepository implements CustomerRepositoryInterface

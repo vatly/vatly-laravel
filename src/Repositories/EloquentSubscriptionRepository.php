@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Repositories;
 
-use Vatly\Contracts\BillableInterface;
-use Vatly\Contracts\SubscriptionInterface;
-use Vatly\Contracts\SubscriptionRepositoryInterface;
+use Vatly\Fluent\Contracts\BillableInterface;
+use Vatly\Fluent\Contracts\SubscriptionInterface;
+use Vatly\Fluent\Contracts\SubscriptionRepositoryInterface;
 use Vatly\Laravel\Models\Subscription;
 
 class EloquentSubscriptionRepository implements SubscriptionRepositoryInterface

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Vatly\Laravel\Repositories;
 
 use DateTimeInterface;
-use Vatly\Contracts\WebhookCallRepositoryInterface;
+use Vatly\Fluent\Contracts\WebhookCallRepositoryInterface;
 use Vatly\Laravel\Models\VatlyWebhookCall;
 
 class EloquentWebhookCallRepository implements WebhookCallRepositoryInterface

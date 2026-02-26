@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Listeners;
 
-use Vatly\Contracts\CustomerRepositoryInterface;
-use Vatly\Contracts\EventDispatcherInterface;
-use Vatly\Events\LocalSubscriptionCreated;
-use Vatly\Events\SubscriptionStarted;
+use Vatly\Fluent\Contracts\CustomerRepositoryInterface;
+use Vatly\Fluent\Contracts\EventDispatcherInterface;
+use Vatly\Fluent\Events\LocalSubscriptionCreated;
+use Vatly\Fluent\Events\SubscriptionStarted;
 use Vatly\Laravel\Models\Subscription;
 
 class StartSubscriptionListener

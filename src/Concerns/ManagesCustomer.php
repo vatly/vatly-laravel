@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Concerns;
 
-use Vatly\Actions\CreateCustomer;
-use Vatly\Actions\GetCustomer;
-use Vatly\Actions\Responses\CreateCustomerResponse;
-use Vatly\Actions\Responses\CustomerResponse;
-use Vatly\Actions\Responses\GetCustomerResponse;
-use Vatly\Exceptions\CustomerAlreadyCreatedException;
-use Vatly\Exceptions\FeatureUnavailableException;
-use Vatly\Exceptions\InvalidCustomerException;
+use Vatly\Fluent\Actions\CreateCustomer;
+use Vatly\Fluent\Actions\GetCustomer;
+use Vatly\Fluent\Actions\Responses\CreateCustomerResponse;
+use Vatly\Fluent\Actions\Responses\CustomerResponse;
+use Vatly\Fluent\Actions\Responses\GetCustomerResponse;
+use Vatly\Fluent\Exceptions\CustomerAlreadyCreatedException;
+use Vatly\Fluent\Exceptions\FeatureUnavailableException;
+use Vatly\Fluent\Exceptions\InvalidCustomerException;
 
 /**
  * Provides BillableInterface implementation and customer management for Eloquent models.

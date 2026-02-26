@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Vatly\Laravel\Tests\Listeners;
 
 use Illuminate\Support\Facades\Event;
-use Vatly\Contracts\EventDispatcherInterface;
-use Vatly\Events\SubscriptionStarted;
-use Vatly\Events\UnsupportedWebhookReceived;
-use Vatly\Events\WebhookReceived;
+use Vatly\Fluent\Contracts\EventDispatcherInterface;
+use Vatly\Fluent\Events\SubscriptionStarted;
+use Vatly\Fluent\Events\UnsupportedWebhookReceived;
+use Vatly\Fluent\Events\WebhookReceived;
 use Vatly\Laravel\Listeners\CascadeVatlyWebhookEvents;
 use Vatly\Laravel\Tests\BaseTestCase;
-use Vatly\Webhooks\WebhookEventFactory;
+use Vatly\Fluent\Webhooks\WebhookEventFactory;
 
 class CascadeVatlyWebhookEventsTest extends BaseTestCase
 {

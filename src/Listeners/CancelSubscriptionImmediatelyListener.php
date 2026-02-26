@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Listeners;
 
-use Vatly\Events\SubscriptionCanceledImmediately;
+use Vatly\Fluent\Events\SubscriptionCanceledImmediately;
 use Vatly\Laravel\Models\Subscription;
 
 class CancelSubscriptionImmediatelyListener

@@ -81,11 +81,13 @@ final readonly class BigDecimal extends BigNumber
      * @param int                        $scale The scale of the number. If negative, the scale will be set to zero
      *                                          and the unscaled value will be adjusted accordingly.
      *
+     * @throws MathException If the value is not valid, or is not convertible to a BigInteger.
+     *
      * @pure
      */
     public static function ofUnscaledValue(BigNumber|int|float|string $value, int $scale = 0): BigDecimal
     {
-        $value = (string) BigInteger::of($value);
+        $value = BigInteger::of($value)->toString();
 
         if ($scale < 0) {
             if ($value !== '0') {
@@ -174,7 +176,7 @@ final readonly class BigDecimal extends BigNumber
         [$a, $b] = $this->scaleValues($this, $that);
 
         $value = CalculatorRegistry::get()->add($a, $b);
-        $scale = $this->scale > $that->scale ? $this->scale : $that->scale;
+        $scale = max($this->scale, $that->scale);
 
         return new BigDecimal($value, $scale);
     }
@@ -201,7 +203,7 @@ final readonly class BigDecimal extends BigNumber
         [$a, $b] = $this->scaleValues($this, $that);
 
         $value = CalculatorRegistry::get()->sub($a, $b);
-        $scale = $this->scale > $that->scale ? $this->scale : $that->scale;
+        $scale = max($this->scale, $that->scale);
 
         return new BigDecimal($value, $scale);
     }
@@ -213,7 +215,7 @@ final readonly class BigDecimal extends BigNumber
      *
      * @param BigNumber|int|float|string $that The multiplier. Must be convertible to a BigDecimal.
      *
-     * @throws MathException If the multiplier is not a valid number, or is not convertible to a BigDecimal.
+     * @throws MathException If the multiplier is not valid, or is not convertible to a BigDecimal.
      *
      * @pure
      */
@@ -243,9 +245,10 @@ final readonly class BigDecimal extends BigNumber
      * @param RoundingMode               $roundingMode An optional rounding mode, defaults to Unnecessary.
      *
      * @throws InvalidArgumentException   If the scale is negative.
-     * @throws MathException              If the divisor is not a valid number or is not convertible to a BigDecimal.
+     * @throws MathException              If the divisor is not valid, or is not convertible to a BigDecimal.
      * @throws DivisionByZeroException    If the divisor is zero.
-     * @throws RoundingNecessaryException If RoundingMode::Unnecessary is used and the result cannot be represented exactly at the given scale.
+     * @throws RoundingNecessaryException If RoundingMode::Unnecessary is used and the result cannot be represented
+     *                                    exactly at the given scale.
      *
      * @pure
      */
@@ -310,7 +313,7 @@ final readonly class BigDecimal extends BigNumber
      *
      * @param BigNumber|int|float|string $that The divisor. Must be convertible to a BigDecimal.
      *
-     * @throws MathException              If the divisor is not a valid number or is not convertible to a BigDecimal.
+     * @throws MathException              If the divisor is not valid, or is not convertible to a BigDecimal.
      * @throws DivisionByZeroException    If the divisor is zero.
      * @throws RoundingNecessaryException If the result yields an infinite number of digits.
      *
@@ -445,7 +448,7 @@ final readonly class BigDecimal extends BigNumber
 
         $remainder = CalculatorRegistry::get()->divR($p, $q);
 
-        $scale = $this->scale > $that->scale ? $this->scale : $that->scale;
+        $scale = max($this->scale, $that->scale);
 
         return new BigDecimal($remainder, $scale);
     }
@@ -484,7 +487,7 @@ final readonly class BigDecimal extends BigNumber
 
         [$quotient, $remainder] = CalculatorRegistry::get()->divQR($p, $q);
 
-        $scale = $this->scale > $that->scale ? $this->scale : $that->scale;
+        $scale = max($this->scale, $that->scale);
 
         $quotient = new BigDecimal($quotient, 0);
         $remainder = new BigDecimal($remainder, $scale);
@@ -503,7 +506,8 @@ final readonly class BigDecimal extends BigNumber
      *
      * @throws InvalidArgumentException   If the scale is negative.
      * @throws NegativeNumberException    If this number is negative.
-     * @throws RoundingNecessaryException If RoundingMode::Unnecessary is used, but rounding is necessary.
+     * @throws RoundingNecessaryException If RoundingMode::Unnecessary is used and the result cannot be represented
+     *                                    exactly at the given scale.
      *
      * @pure
      */
@@ -842,14 +846,14 @@ final readonly class BigDecimal extends BigNumber
     #[Override]
     public function toFloat(): float
     {
-        return (float) (string) $this;
+        return (float) $this->toString();
     }
 
     /**
      * @return numeric-string
      */
     #[Override]
-    public function __toString(): string
+    public function toString(): string
     {
         if ($this->scale === 0) {
             /** @var numeric-string */

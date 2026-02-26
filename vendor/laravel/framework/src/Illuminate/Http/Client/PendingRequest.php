@@ -838,7 +838,9 @@ class PendingRequest
      *
      * @param  string  $url
      * @param  array|string|null  $query
-     * @return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
+     * @return \Illuminate\Http\Client\Response|\GuzzleHttp\Promise\PromiseInterface
+     *
+     * @phpstan-return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
      *
      * @throws \Illuminate\Http\Client\ConnectionException
      */
@@ -854,7 +856,9 @@ class PendingRequest
      *
      * @param  string  $url
      * @param  array|string|null  $query
-     * @return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
+     * @return \Illuminate\Http\Client\Response|\GuzzleHttp\Promise\PromiseInterface
+     *
+     * @phpstan-return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
      *
      * @throws \Illuminate\Http\Client\ConnectionException
      */
@@ -870,7 +874,9 @@ class PendingRequest
      *
      * @param  string  $url
      * @param  array|\JsonSerializable|\Illuminate\Contracts\Support\Arrayable  $data
-     * @return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
+     * @return \Illuminate\Http\Client\Response|\GuzzleHttp\Promise\PromiseInterface
+     *
+     * @phpstan-return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
      *
      * @throws \Illuminate\Http\Client\ConnectionException
      */
@@ -886,7 +892,9 @@ class PendingRequest
      *
      * @param  string  $url
      * @param  array|\JsonSerializable|\Illuminate\Contracts\Support\Arrayable  $data
-     * @return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
+     * @return \Illuminate\Http\Client\Response|\GuzzleHttp\Promise\PromiseInterface
+     *
+     * @phpstan-return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
      *
      * @throws \Illuminate\Http\Client\ConnectionException
      */
@@ -902,7 +910,9 @@ class PendingRequest
      *
      * @param  string  $url
      * @param  array|\JsonSerializable|\Illuminate\Contracts\Support\Arrayable  $data
-     * @return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
+     * @return \Illuminate\Http\Client\Response|\GuzzleHttp\Promise\PromiseInterface
+     *
+     * @phpstan-return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
      *
      * @throws \Illuminate\Http\Client\ConnectionException
      */
@@ -918,7 +928,9 @@ class PendingRequest
      *
      * @param  string  $url
      * @param  array|\JsonSerializable|\Illuminate\Contracts\Support\Arrayable  $data
-     * @return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
+     * @return \Illuminate\Http\Client\Response|\GuzzleHttp\Promise\PromiseInterface
+     *
+     * @phpstan-return (TAsync is false ?  \Illuminate\Http\Client\Response : \GuzzleHttp\Promise\PromiseInterface)
      *
      * @throws \Illuminate\Http\Client\ConnectionException
      */
@@ -999,7 +1011,9 @@ class PendingRequest
      * @param  string  $method
      * @param  string  $url
      * @param  array  $options
-     * @return (TAsync is false ? \Illuminate\Http\Client\Response : \Illuminate\Http\Client\Promises\LazyPromise)
+     * @return \Illuminate\Http\Client\Response|\Illuminate\Http\Client\Promises\LazyPromise
+     *
+     * @phpstan-return (TAsync is false ? \Illuminate\Http\Client\Response : \Illuminate\Http\Client\Promises\LazyPromise)
      *
      * @throws \Exception
      * @throws \Illuminate\Http\Client\ConnectionException
@@ -1078,7 +1092,7 @@ class PendingRequest
                 throw $e;
             }
         }, $this->retryDelay ?? 100, function ($exception) use (&$shouldRetry) {
-            $result = $shouldRetry ?? ($this->retryWhenCallback ? call_user_func($this->retryWhenCallback, $exception, $this, $this->request?->toPsrRequest()->getMethod()) : true);
+            $result = $shouldRetry !== null ? $shouldRetry : ($this->retryWhenCallback ? call_user_func($this->retryWhenCallback, $exception, $this, $this->request?->toPsrRequest()->getMethod()) : true);
 
             $shouldRetry = null;
 
@@ -1483,6 +1497,8 @@ class PendingRequest
      * Build the stub handler.
      *
      * @return \Closure
+     *
+     * @throws \Illuminate\Http\Client\Exceptions\StrayRequestException
      */
     public function buildStubHandler()
     {
@@ -1781,6 +1797,8 @@ class PendingRequest
      *
      * @param  \GuzzleHttp\Exception\ConnectException  $e
      * @return void
+     *
+     * @throws \Illuminate\Http\Client\ConnectionException
      */
     protected function marshalConnectionException(ConnectException $e)
     {
@@ -1802,6 +1820,8 @@ class PendingRequest
      *
      * @param  \GuzzleHttp\Exception\RequestException  $e
      * @return void
+     *
+     * @throws \Illuminate\Http\Client\ConnectionException
      */
     protected function marshalRequestExceptionWithoutResponse(RequestException $e)
     {
@@ -1823,6 +1843,9 @@ class PendingRequest
      *
      * @param  \GuzzleHttp\Exception\RequestException  $e
      * @return void
+     *
+     * @throws \Illuminate\Http\Client\RequestException
+     * @throws \Illuminate\Http\Client\ConnectionException
      */
     protected function marshalRequestExceptionWithResponse(RequestException $e)
     {

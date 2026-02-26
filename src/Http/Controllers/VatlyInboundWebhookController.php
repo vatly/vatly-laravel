@@ -8,10 +8,10 @@ use DateTimeImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Vatly\Contracts\EventDispatcherInterface;
-use Vatly\Contracts\WebhookCallRepositoryInterface;
-use Vatly\Events\WebhookReceived;
-use Vatly\Webhooks\WebhookEventFactory;
+use Vatly\Fluent\Contracts\EventDispatcherInterface;
+use Vatly\Fluent\Contracts\WebhookCallRepositoryInterface;
+use Vatly\Fluent\Events\WebhookReceived;
+use Vatly\Fluent\Webhooks\WebhookEventFactory;
 
 class VatlyInboundWebhookController
 {
