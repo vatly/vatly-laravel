@@ -11,6 +11,7 @@ use Vatly\Actions\CreateCheckout;
 use Vatly\Actions\CreateCustomer;
 use Vatly\Actions\GetCheckout;
 use Vatly\Actions\GetCustomer;
+use Vatly\Actions\GetPaymentMethodUpdateUrl;
 use Vatly\Actions\GetSubscription;
 use Vatly\Actions\SwapSubscriptionPlan;
 use Vatly\API\VatlyApiClient;
@@ -86,6 +87,7 @@ class VatlyServiceProvider extends ServiceProvider
             CreateCheckout::class,
             GetCheckout::class,
             GetSubscription::class,
+            GetPaymentMethodUpdateUrl::class,
             CancelSubscription::class,
             SwapSubscriptionPlan::class,
         ];

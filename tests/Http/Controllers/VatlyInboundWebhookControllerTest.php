@@ -19,9 +19,9 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
 
     private VatlyInboundWebhookController $controller;
 
-    private array $dispatchedEvents = [];
+    public array $dispatchedEvents = [];
 
-    private array $recordedCalls = [];
+    public array $recordedCalls = [];
 
     protected function setUp(): void
     {

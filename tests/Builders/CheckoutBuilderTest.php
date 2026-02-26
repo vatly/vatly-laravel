@@ -54,6 +54,7 @@ class CheckoutBuilderTest extends BaseTestCase
             'products' => [
                 'subscription_foo_bar',
             ],
+            'customerId' => null,
             'redirectUrlSuccess' => 'https://example.com/success',
             'redirectUrlCanceled' => 'https://example.com/canceled',
             'testmode' => false,

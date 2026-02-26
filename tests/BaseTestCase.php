@@ -15,4 +15,22 @@ abstract class BaseTestCase extends TestCase
             VatlyServiceProvider::class,
         ];
     }
+
+    protected function defineDatabaseMigrations(): void
+    {
+        $this->loadMigrationsFrom(__DIR__ . '/Fixtures/migrations');
+    }
+
+    protected function getEnvironmentSetUp($app): void
+    {
+        $app['config']->set('database.default', 'testing');
+        $app['config']->set('database.connections.testing', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+        ]);
+        $app['config']->set('vatly.api_key', 'test_xxxxxxxxxxxxxxxxxx');
+        $app['config']->set('vatly.redirect_url_success', 'https://example.com/success');
+        $app['config']->set('vatly.redirect_url_canceled', 'https://example.com/canceled');
+    }
 }

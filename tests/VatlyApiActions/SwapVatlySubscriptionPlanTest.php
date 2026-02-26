@@ -31,8 +31,8 @@ class SwapVatlySubscriptionPlanTest extends BaseTestCase
         $mockSubscriptionsEndpoint = $this->createMock(SubscriptionEndpoint::class);
         $mockSubscriptionsEndpoint
             ->expects($this->once())
-            ->method('swap')
-            ->with('subscription_dummy_1', 'subscription_plan_new_foo_bar')
+            ->method('update')
+            ->with('subscription_dummy_1', ['subscriptionPlanId' => 'subscription_plan_new_foo_bar'])
             ->willReturn($vatlySubscriptionApiResponse);
         $client = VatlyApiClientWithReplacedEndpoint::createAndReplaceEndpoint(
             'subscriptions',

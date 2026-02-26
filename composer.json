@@ -19,6 +19,7 @@
         "vatly/vatly-fluent-php": "dev-main"
     },
     "require-dev": {
+        "mockery/mockery": "^1.6",
         "orchestra/testbench": "^8.0|^9.0|^10.0",
         "pestphp/pest": "^3.0"
     },
@@ -39,7 +40,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Vatly\\Laravel\\Tests\\": "tests/"
+            "Vatly\\Laravel\\Tests\\": "tests/",
+            "App\\Models\\": "tests/Fixtures/"
         }
     },
     "extra": {
