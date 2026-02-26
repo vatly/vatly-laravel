@@ -21,11 +21,6 @@ class User extends Authenticatable implements BillableInterface
         return parent::getKey();
     }
 
-    public function getMorphClass(): string
-    {
-        return parent::getMorphClass();
-    }
-
     public function save(array $options = []): void
     {
         parent::save($options);

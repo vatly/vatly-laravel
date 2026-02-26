@@ -23,7 +23,7 @@ use Vatly\Exceptions\InvalidCustomerException;
  * @method static where(string $column, mixed $value)
  * @method bool saveQuietly()
  * @method mixed getKey()
- * @method string getMorphClass()
+ * @method string getMorphClass() Provided by Eloquent Model
  */
 trait ManagesCustomer
 {
