@@ -16,23 +16,13 @@
         "illuminate/http": "^11.0|^12.0",
         "illuminate/routing": "^11.0|^12.0",
         "illuminate/support": "^11.0|^12.0",
-        "vatly/vatly-fluent-php": "dev-main"
+        "vatly/vatly-fluent-php": "^0.1.0-alpha.1"
     },
     "require-dev": {
         "mockery/mockery": "^1.6",
         "orchestra/testbench": "^9.0|^10.0",
         "pestphp/pest": "^3.0"
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/Vatly/vatly-fluent-php.git"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/Vatly/vatly-api-php.git"
-        }
-    ],
     "autoload": {
         "psr-4": {
             "Vatly\\Laravel\\": "src/"
