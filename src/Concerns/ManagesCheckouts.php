@@ -6,7 +6,7 @@ namespace Vatly\Laravel\Concerns;
 
 use Vatly\Fluent\Actions\CreateCheckout;
 use Vatly\Fluent\Builders\CheckoutBuilder;
-use Vatly\Fluent\Builders\SubscriptionBuilder;
+use Vatly\Laravel\Builders\SubscriptionBuilder;
 use Vatly\Fluent\Contracts\ConfigurationInterface;
 
 trait ManagesCheckouts
