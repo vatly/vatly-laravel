@@ -7,7 +7,7 @@ namespace Vatly\Laravel\Concerns;
 use Vatly\Fluent\Actions\CreateCheckout;
 use Vatly\Fluent\Builders\CheckoutBuilder;
 use Vatly\Laravel\Builders\SubscriptionBuilder;
-use Vatly\Fluent\Contracts\ConfigurationInterface;
+use Vatly\Laravel\VatlyConfig;
 
 trait ManagesCheckouts
 {
@@ -26,7 +26,7 @@ trait ManagesCheckouts
         $this->ensureHasVatlyCustomer();
 
         return new SubscriptionBuilder(
-            config: app()->make(ConfigurationInterface::class),
+            vatlyConfig: app()->make(VatlyConfig::class),
             owner: $this,
             checkoutBuilder: $this->checkout(),
         );
