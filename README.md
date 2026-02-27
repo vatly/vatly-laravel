@@ -50,7 +50,7 @@ php artisan migrate
 4. Add the `Billable` trait to your User model:
 
 ```php
-use Vatly\Contracts\BillableInterface;
+use Vatly\Fluent\Contracts\BillableInterface;
 use Vatly\Laravel\Billable;
 
 class User extends Authenticatable implements BillableInterface

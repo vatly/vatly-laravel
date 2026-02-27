@@ -48,7 +48,7 @@ The package includes listeners that automatically handle subscription lifecycle 
 Listen for Vatly events in your `EventServiceProvider` or using the `Event` facade:
 
 ```php
-use Vatly\Events\SubscriptionStarted;
+use Vatly\Fluent\Events\SubscriptionStarted;
 
 Event::listen(SubscriptionStarted::class, function (SubscriptionStarted $event) {
     // $event->subscriptionId

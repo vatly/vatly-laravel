@@ -11,7 +11,7 @@ Vatly Laravel provides a Cashier-like integration for [Vatly](https://vatly.com)
 ## Installation
 
 ```bash
-composer require vatly/vatly-laravel:v0.1.0-alpha.2
+composer require vatly/vatly-laravel:v0.2.0-alpha.1
 ```
 
 > **Note:** This is an alpha release. Pin to an exact version to avoid breaking changes.
@@ -66,7 +66,7 @@ This creates:
 Add the `Billable` trait and implement `BillableInterface` on your User model:
 
 ```php
-use Vatly\Contracts\BillableInterface;
+use Vatly\Fluent\Contracts\BillableInterface;
 use Vatly\Laravel\Billable;
 
 class User extends Authenticatable implements BillableInterface
