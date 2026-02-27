@@ -2,24 +2,26 @@
 
 declare(strict_types=1);
 
+namespace Vatly\Laravel\Tests\Models;
+
 use Carbon\Carbon;
+use Mockery;
 use Vatly\API\Resources\Subscription as ApiSubscription;
 use Vatly\Fluent\Actions\GetSubscription;
 use Vatly\Laravel\Models\Subscription;
+use Vatly\Laravel\Tests\BaseTestCase;
 
-beforeEach(function () {
-    // Create a mock subscription in the database
-    $this->subscription = new Subscription([
-        'vatly_id' => 'subscription_test123',
-        'plan_id' => 'plan_old',
-        'name' => 'Old Plan',
-        'type' => 'default',
-        'quantity' => 1,
-    ]);
-});
+class SubscriptionSyncTest extends BaseTestCase
+{
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
 
-describe('sync', function () {
-    test('it updates local subscription with fresh data from Vatly', function () {
+    /** @test */
+    public function it_updates_local_subscription_with_fresh_data_from_vatly(): void
+    {
         $apiSubscription = Mockery::mock(ApiSubscription::class);
         $apiSubscription->id = 'subscription_test123';
         $apiSubscription->subscriptionPlanId = 'plan_new';
@@ -38,7 +40,6 @@ describe('sync', function () {
 
         app()->instance(GetSubscription::class, $mockAction);
 
-        // Mock the update method since we don't have a real database
         $subscription = Mockery::mock(Subscription::class)->makePartial();
         $subscription->vatly_id = 'subscription_test123';
         $subscription->shouldReceive('update')
@@ -51,10 +52,12 @@ describe('sync', function () {
 
         $result = $subscription->sync();
 
-        expect($result)->toBe($subscription);
-    });
+        $this->assertSame($subscription, $result);
+    }
 
-    test('it syncs ends_at when subscription is ended', function () {
+    /** @test */
+    public function it_syncs_ends_at_when_subscription_is_ended(): void
+    {
         $endedAt = '2026-03-01T00:00:00Z';
 
         $apiSubscription = Mockery::mock(ApiSubscription::class);
@@ -84,9 +87,11 @@ describe('sync', function () {
             }));
 
         $subscription->sync();
-    });
+    }
 
-    test('it syncs trial_ends_at when present', function () {
+    /** @test */
+    public function it_syncs_trial_ends_at_when_present(): void
+    {
         $trialUntil = '2026-02-15T00:00:00Z';
 
         $apiSubscription = Mockery::mock(ApiSubscription::class);
@@ -115,9 +120,5 @@ describe('sync', function () {
             }));
 
         $subscription->sync();
-    });
-});
-
-afterEach(function () {
-    Mockery::close();
-});
+    }
+}

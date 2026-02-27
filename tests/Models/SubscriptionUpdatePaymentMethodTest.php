@@ -2,12 +2,25 @@
 
 declare(strict_types=1);
 
+namespace Vatly\Laravel\Tests\Models;
+
+use Mockery;
 use Vatly\API\Types\Link;
 use Vatly\Fluent\Actions\GetPaymentMethodUpdateUrl;
 use Vatly\Laravel\Models\Subscription;
+use Vatly\Laravel\Tests\BaseTestCase;
 
-describe('updatePaymentMethodUrl', function () {
-    test('it returns the payment method update URL', function () {
+class SubscriptionUpdatePaymentMethodTest extends BaseTestCase
+{
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
+
+    /** @test */
+    public function it_returns_the_payment_method_update_url(): void
+    {
         $expectedUrl = 'https://checkout.vatly.com/update-payment/abc123';
 
         $mockAction = Mockery::mock(GetPaymentMethodUpdateUrl::class);
@@ -21,10 +34,12 @@ describe('updatePaymentMethodUrl', function () {
         $subscription = new Subscription(['vatly_id' => 'subscription_test123']);
         $url = $subscription->updatePaymentMethodUrl();
 
-        expect($url)->toBe($expectedUrl);
-    });
+        $this->assertSame($expectedUrl, $url);
+    }
 
-    test('it passes prefill data to the action', function () {
+    /** @test */
+    public function it_passes_prefill_data_to_the_action(): void
+    {
         $prefillData = ['billingAddress' => ['city' => 'Amsterdam']];
 
         $mockAction = Mockery::mock(GetPaymentMethodUpdateUrl::class);
@@ -38,10 +53,6 @@ describe('updatePaymentMethodUrl', function () {
         $subscription = new Subscription(['vatly_id' => 'subscription_test123']);
         $url = $subscription->updatePaymentMethodUrl($prefillData);
 
-        expect($url)->toBe('https://checkout.vatly.com/update');
-    });
-});
-
-afterEach(function () {
-    Mockery::close();
-});
+        $this->assertSame('https://checkout.vatly.com/update', $url);
+    }
+}

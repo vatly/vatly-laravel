@@ -2,12 +2,21 @@
 
 declare(strict_types=1);
 
+namespace Vatly\Laravel\Tests\Events\Inbound;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vatly\Laravel\Events\Inbound\SubscriptionWasStartedAtVatly;
 use Vatly\Laravel\Events\Inbound\VatlyWebhookCallReceived;
 use Vatly\Laravel\Models\Subscription;
+use Vatly\Laravel\Tests\BaseTestCase;
 
-describe('fromWebhookCall', function () {
-    test('it uses default subscription type when no metadata present', function () {
+class SubscriptionWasStartedAtVatlyTest extends BaseTestCase
+{
+    use RefreshDatabase;
+
+    /** @test */
+    public function it_uses_default_subscription_type_when_no_metadata_present(): void
+    {
         $webhookCall = new VatlyWebhookCallReceived(
             eventName: 'subscription.started',
             resourceId: 'subscription_abc123',
@@ -26,10 +35,12 @@ describe('fromWebhookCall', function () {
 
         $event = SubscriptionWasStartedAtVatly::fromWebhookCall($webhookCall);
 
-        expect($event->type)->toBe(Subscription::DEFAULT_TYPE);
-    });
+        $this->assertSame(Subscription::DEFAULT_TYPE, $event->type);
+    }
 
-    test('it uses subscription type from metadata when present', function () {
+    /** @test */
+    public function it_uses_subscription_type_from_metadata_when_present(): void
+    {
         $webhookCall = new VatlyWebhookCallReceived(
             eventName: 'subscription.started',
             resourceId: 'subscription_abc123',
@@ -53,10 +64,12 @@ describe('fromWebhookCall', function () {
 
         $event = SubscriptionWasStartedAtVatly::fromWebhookCall($webhookCall);
 
-        expect($event->type)->toBe('premium');
-    });
+        $this->assertSame('premium', $event->type);
+    }
 
-    test('it falls back to default when vatly_laravel metadata is empty', function () {
+    /** @test */
+    public function it_falls_back_to_default_when_vatly_laravel_metadata_is_empty(): void
+    {
         $webhookCall = new VatlyWebhookCallReceived(
             eventName: 'subscription.started',
             resourceId: 'subscription_abc123',
@@ -78,10 +91,12 @@ describe('fromWebhookCall', function () {
 
         $event = SubscriptionWasStartedAtVatly::fromWebhookCall($webhookCall);
 
-        expect($event->type)->toBe(Subscription::DEFAULT_TYPE);
-    });
+        $this->assertSame(Subscription::DEFAULT_TYPE, $event->type);
+    }
 
-    test('it extracts all fields correctly', function () {
+    /** @test */
+    public function it_extracts_all_fields_correctly(): void
+    {
         $webhookCall = new VatlyWebhookCallReceived(
             eventName: 'subscription.started',
             resourceId: 'subscription_abc123',
@@ -105,11 +120,11 @@ describe('fromWebhookCall', function () {
 
         $event = SubscriptionWasStartedAtVatly::fromWebhookCall($webhookCall);
 
-        expect($event->customerId)->toBe('customer_xyz')
-            ->and($event->subscriptionId)->toBe('subscription_abc123')
-            ->and($event->planId)->toBe('plan_enterprise')
-            ->and($event->type)->toBe('team')
-            ->and($event->name)->toBe('Enterprise Plan')
-            ->and($event->quantity)->toBe(5);
-    });
-});
+        $this->assertSame('customer_xyz', $event->customerId);
+        $this->assertSame('subscription_abc123', $event->subscriptionId);
+        $this->assertSame('plan_enterprise', $event->planId);
+        $this->assertSame('team', $event->type);
+        $this->assertSame('Enterprise Plan', $event->name);
+        $this->assertSame(5, $event->quantity);
+    }
+}

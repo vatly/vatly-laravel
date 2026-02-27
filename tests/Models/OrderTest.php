@@ -5,92 +5,109 @@ declare(strict_types=1);
 namespace Vatly\Laravel\Tests\Models;
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vatly\Fluent\Contracts\OrderInterface;
 use Vatly\Laravel\Models\Order;
+use Vatly\Laravel\Tests\BaseTestCase;
 
-test('it implements OrderInterface', function () {
-    $order = new Order();
+class OrderTest extends BaseTestCase
+{
+    use RefreshDatabase;
 
-    expect($order)->toBeInstanceOf(OrderInterface::class);
-});
+    /** @test */
+    public function it_implements_order_interface(): void
+    {
+        $order = new Order();
 
-test('it can be created with attributes', function () {
-    $user = User::create([
-        'name' => 'Test User',
-        'email' => 'order-test@example.com',
-        'password' => bcrypt('password'),
-    ]);
+        $this->assertInstanceOf(OrderInterface::class, $order);
+    }
 
-    $order = Order::create([
-        'owner_type' => $user->getMorphClass(),
-        'owner_id' => $user->getKey(),
-        'vatly_id' => 'ord_test_123',
-        'status' => 'paid',
-        'total' => 9900,
-        'currency' => 'EUR',
-        'invoice_number' => 'INV-2024-001',
-        'payment_method' => 'credit_card',
-    ]);
+    /** @test */
+    public function it_can_be_created_with_attributes(): void
+    {
+        $user = User::create([
+            'name' => 'Test User',
+            'email' => 'order-test@example.com',
+            'password' => bcrypt('password'),
+        ]);
 
-    expect($order->getVatlyId())->toBe('ord_test_123')
-        ->and($order->getStatus())->toBe('paid')
-        ->and($order->getTotal())->toBe(9900)
-        ->and($order->getCurrency())->toBe('EUR')
-        ->and($order->getInvoiceNumber())->toBe('INV-2024-001')
-        ->and($order->getPaymentMethod())->toBe('credit_card')
-        ->and($order->isPaid())->toBeTrue();
-});
+        $order = Order::create([
+            'owner_type' => $user->getMorphClass(),
+            'owner_id' => $user->getKey(),
+            'vatly_id' => 'ord_test_123',
+            'status' => 'paid',
+            'total' => 9900,
+            'currency' => 'EUR',
+            'invoice_number' => 'INV-2024-001',
+            'payment_method' => 'credit_card',
+        ]);
 
-test('it has a morphTo owner relationship', function () {
-    $user = User::create([
-        'name' => 'Test User',
-        'email' => 'order-owner@example.com',
-        'password' => bcrypt('password'),
-    ]);
+        $this->assertSame('ord_test_123', $order->getVatlyId());
+        $this->assertSame('paid', $order->getStatus());
+        $this->assertSame(9900, $order->getTotal());
+        $this->assertSame('EUR', $order->getCurrency());
+        $this->assertSame('INV-2024-001', $order->getInvoiceNumber());
+        $this->assertSame('credit_card', $order->getPaymentMethod());
+        $this->assertTrue($order->isPaid());
+    }
 
-    $order = Order::create([
-        'owner_type' => $user->getMorphClass(),
-        'owner_id' => $user->getKey(),
-        'vatly_id' => 'ord_owner_123',
-        'status' => 'paid',
-        'total' => 4900,
-        'currency' => 'EUR',
-    ]);
+    /** @test */
+    public function it_has_a_morph_to_owner_relationship(): void
+    {
+        $user = User::create([
+            'name' => 'Test User',
+            'email' => 'order-owner@example.com',
+            'password' => bcrypt('password'),
+        ]);
 
-    expect($order->owner)->toBeInstanceOf(User::class)
-        ->and($order->owner->id)->toBe($user->id);
-});
+        $order = Order::create([
+            'owner_type' => $user->getMorphClass(),
+            'owner_id' => $user->getKey(),
+            'vatly_id' => 'ord_owner_123',
+            'status' => 'paid',
+            'total' => 4900,
+            'currency' => 'EUR',
+        ]);
 
-test('user can access orders via relationship', function () {
-    $user = User::create([
-        'name' => 'Test User',
-        'email' => 'order-rel@example.com',
-        'password' => bcrypt('password'),
-    ]);
+        $this->assertInstanceOf(User::class, $order->owner);
+        $this->assertSame($user->id, $order->owner->id);
+    }
 
-    Order::create([
-        'owner_type' => $user->getMorphClass(),
-        'owner_id' => $user->getKey(),
-        'vatly_id' => 'ord_rel_1',
-        'status' => 'paid',
-        'total' => 9900,
-        'currency' => 'EUR',
-    ]);
+    /** @test */
+    public function user_can_access_orders_via_relationship(): void
+    {
+        $user = User::create([
+            'name' => 'Test User',
+            'email' => 'order-rel@example.com',
+            'password' => bcrypt('password'),
+        ]);
 
-    Order::create([
-        'owner_type' => $user->getMorphClass(),
-        'owner_id' => $user->getKey(),
-        'vatly_id' => 'ord_rel_2',
-        'status' => 'paid',
-        'total' => 4900,
-        'currency' => 'USD',
-    ]);
+        Order::create([
+            'owner_type' => $user->getMorphClass(),
+            'owner_id' => $user->getKey(),
+            'vatly_id' => 'ord_rel_1',
+            'status' => 'paid',
+            'total' => 9900,
+            'currency' => 'EUR',
+        ]);
 
-    expect($user->orders)->toHaveCount(2);
-});
+        Order::create([
+            'owner_type' => $user->getMorphClass(),
+            'owner_id' => $user->getKey(),
+            'vatly_id' => 'ord_rel_2',
+            'status' => 'paid',
+            'total' => 4900,
+            'currency' => 'USD',
+        ]);
 
-test('isPaid returns false for non-paid orders', function () {
-    $order = new Order(['status' => 'pending']);
+        $this->assertCount(2, $user->orders);
+    }
 
-    expect($order->isPaid())->toBeFalse();
-});
+    /** @test */
+    public function is_paid_returns_false_for_non_paid_orders(): void
+    {
+        $order = new Order(['status' => 'pending']);
+
+        $this->assertFalse($order->isPaid());
+    }
+}
