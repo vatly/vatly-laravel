@@ -24,6 +24,7 @@
         "vatly/vatly-fluent-php": "dev-larafast_dev_sprint"
     },
     "require-dev": {
+        "larastan/larastan": "^3.9",
         "mockery/mockery": "^1.6",
         "orchestra/testbench": "^9.0|^10.0",
         "pestphp/pest": "^3.0"
@@ -53,7 +54,9 @@
         }
     },
     "scripts": {
-        "test": "vendor/bin/pest"
+        "test": "vendor/bin/pest",
+        "analyse": "vendor/bin/phpstan analyse --memory-limit=512M",
+        "analyze": "@analyse"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
