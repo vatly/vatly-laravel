@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
+use Vatly\API\Types\Link;
 use Vatly\Fluent\Actions\GetPaymentMethodUpdateUrl;
-use Vatly\Fluent\Actions\Responses\GetPaymentMethodUpdateUrlResponse;
 use Vatly\Laravel\Models\Subscription;
 
 describe('updatePaymentMethodUrl', function () {
@@ -14,10 +14,7 @@ describe('updatePaymentMethodUrl', function () {
         $mockAction->shouldReceive('execute')
             ->once()
             ->with('subscription_test123', [])
-            ->andReturn(new GetPaymentMethodUpdateUrlResponse(
-                url: $expectedUrl,
-                type: 'text/html',
-            ));
+            ->andReturn(new Link($expectedUrl, 'text/html'));
 
         app()->instance(GetPaymentMethodUpdateUrl::class, $mockAction);
 
@@ -34,10 +31,7 @@ describe('updatePaymentMethodUrl', function () {
         $mockAction->shouldReceive('execute')
             ->once()
             ->with('subscription_test123', $prefillData)
-            ->andReturn(new GetPaymentMethodUpdateUrlResponse(
-                url: 'https://checkout.vatly.com/update',
-                type: 'text/html',
-            ));
+            ->andReturn(new Link('https://checkout.vatly.com/update', 'text/html'));
 
         app()->instance(GetPaymentMethodUpdateUrl::class, $mockAction);
 

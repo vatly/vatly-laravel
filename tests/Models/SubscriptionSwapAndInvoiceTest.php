@@ -2,12 +2,17 @@
 
 declare(strict_types=1);
 
+use Vatly\API\Resources\Subscription as ApiSubscription;
 use Vatly\Fluent\Actions\SwapSubscriptionPlan;
-use Vatly\Fluent\Actions\Responses\SwapSubscriptionPlanResponse;
 use Vatly\Laravel\Models\Subscription;
 
 describe('swapAndInvoice', function () {
     test('it swaps plan with immediate invoicing', function () {
+        $apiSubscription = Mockery::mock(ApiSubscription::class);
+        $apiSubscription->id = 'subscription_test123';
+        $apiSubscription->subscriptionPlanId = 'plan_premium';
+        $apiSubscription->quantity = 1;
+
         $mockAction = Mockery::mock(SwapSubscriptionPlan::class);
         $mockAction->shouldReceive('execute')
             ->once()
@@ -19,11 +24,7 @@ describe('swapAndInvoice', function () {
                         && $options['invoiceImmediately'] === true;
                 })
             )
-            ->andReturn(new SwapSubscriptionPlanResponse(
-                subscriptionId: 'subscription_test123',
-                subscriptionPlanId: 'plan_premium',
-                quantity: 1,
-            ));
+            ->andReturn($apiSubscription);
 
         app()->instance(SwapSubscriptionPlan::class, $mockAction);
 
@@ -43,6 +44,11 @@ describe('swapAndInvoice', function () {
     });
 
     test('it passes additional options while forcing immediate flags', function () {
+        $apiSubscription = Mockery::mock(ApiSubscription::class);
+        $apiSubscription->id = 'subscription_test123';
+        $apiSubscription->subscriptionPlanId = 'plan_enterprise';
+        $apiSubscription->quantity = 5;
+
         $mockAction = Mockery::mock(SwapSubscriptionPlan::class);
         $mockAction->shouldReceive('execute')
             ->once()
@@ -56,11 +62,7 @@ describe('swapAndInvoice', function () {
                         && $options['invoiceImmediately'] === true;
                 })
             )
-            ->andReturn(new SwapSubscriptionPlanResponse(
-                subscriptionId: 'subscription_test123',
-                subscriptionPlanId: 'plan_enterprise',
-                quantity: 5,
-            ));
+            ->andReturn($apiSubscription);
 
         app()->instance(SwapSubscriptionPlan::class, $mockAction);
 
@@ -72,6 +74,11 @@ describe('swapAndInvoice', function () {
     });
 
     test('it overrides user-provided immediate flags', function () {
+        $apiSubscription = Mockery::mock(ApiSubscription::class);
+        $apiSubscription->id = 'subscription_test123';
+        $apiSubscription->subscriptionPlanId = 'plan_basic';
+        $apiSubscription->quantity = 1;
+
         $mockAction = Mockery::mock(SwapSubscriptionPlan::class);
         $mockAction->shouldReceive('execute')
             ->once()
@@ -84,11 +91,7 @@ describe('swapAndInvoice', function () {
                         && $options['invoiceImmediately'] === true;
                 })
             )
-            ->andReturn(new SwapSubscriptionPlanResponse(
-                subscriptionId: 'subscription_test123',
-                subscriptionPlanId: 'plan_basic',
-                quantity: 1,
-            ));
+            ->andReturn($apiSubscription);
 
         app()->instance(SwapSubscriptionPlan::class, $mockAction);
 

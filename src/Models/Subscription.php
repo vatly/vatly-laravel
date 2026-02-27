@@ -173,7 +173,7 @@ class Subscription extends Model implements SubscriptionInterface
         $action = app()->make(\Vatly\Fluent\Actions\GetPaymentMethodUpdateUrl::class);
         $response = $action->execute($this->vatly_id, $prefillData);
 
-        return $response->url;
+        return $response->href;
     }
 
     /**
@@ -188,7 +188,7 @@ class Subscription extends Model implements SubscriptionInterface
         $response = $action->execute($this->vatly_id);
 
         $updates = [
-            'plan_id' => $response->planId,
+            'plan_id' => $response->subscriptionPlanId,
             'name' => $response->name,
             'quantity' => $response->quantity,
         ];
@@ -203,8 +203,8 @@ class Subscription extends Model implements SubscriptionInterface
         }
 
         // Sync trial end date if present
-        if ($response->trialEndAt !== null) {
-            $updates['trial_ends_at'] = Carbon::parse($response->trialEndAt);
+        if ($response->trialUntil !== null) {
+            $updates['trial_ends_at'] = Carbon::parse($response->trialUntil);
         }
 
         $this->update($updates);
