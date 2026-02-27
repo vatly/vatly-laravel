@@ -18,18 +18,22 @@ use Vatly\API\VatlyApiClient;
 use Vatly\Fluent\Contracts\ConfigurationInterface;
 use Vatly\Fluent\Contracts\CustomerRepositoryInterface;
 use Vatly\Fluent\Contracts\EventDispatcherInterface;
+use Vatly\Fluent\Contracts\OrderRepositoryInterface;
 use Vatly\Fluent\Contracts\SubscriptionRepositoryInterface;
 use Vatly\Fluent\Contracts\WebhookCallRepositoryInterface;
+use Vatly\Fluent\Events\OrderPaid;
 use Vatly\Fluent\Events\SubscriptionCanceledImmediately;
 use Vatly\Fluent\Events\SubscriptionCanceledWithGracePeriod;
 use Vatly\Fluent\Events\SubscriptionStarted;
 use Vatly\Fluent\Events\WebhookReceived;
+use Vatly\Fluent\Webhooks\Reactions\StoreOrderOnPaid;
 use Vatly\Laravel\Events\LaravelEventDispatcher;
 use Vatly\Laravel\Listeners\CancelSubscriptionImmediatelyListener;
 use Vatly\Laravel\Listeners\CancelSubscriptionWithGracePeriodListener;
 use Vatly\Laravel\Listeners\CascadeVatlyWebhookEvents;
 use Vatly\Laravel\Listeners\StartSubscriptionListener;
 use Vatly\Laravel\Repositories\EloquentCustomerRepository;
+use Vatly\Laravel\Repositories\EloquentOrderRepository;
 use Vatly\Laravel\Repositories\EloquentSubscriptionRepository;
 use Vatly\Laravel\Repositories\EloquentWebhookCallRepository;
 use Vatly\Fluent\Webhooks\SignatureVerifier;
@@ -102,6 +106,7 @@ class VatlyServiceProvider extends ServiceProvider
     private function registerRepositories(): void
     {
         $this->app->bind(SubscriptionRepositoryInterface::class, EloquentSubscriptionRepository::class);
+        $this->app->bind(OrderRepositoryInterface::class, EloquentOrderRepository::class);
         $this->app->bind(CustomerRepositoryInterface::class, EloquentCustomerRepository::class);
         $this->app->bind(WebhookCallRepositoryInterface::class, EloquentWebhookCallRepository::class);
     }
@@ -129,6 +134,10 @@ class VatlyServiceProvider extends ServiceProvider
         Event::listen(SubscriptionStarted::class, StartSubscriptionListener::class);
         Event::listen(SubscriptionCanceledImmediately::class, CancelSubscriptionImmediatelyListener::class);
         Event::listen(SubscriptionCanceledWithGracePeriod::class, CancelSubscriptionWithGracePeriodListener::class);
+        Event::listen(OrderPaid::class, function (OrderPaid $event) {
+            $reaction = new StoreOrderOnPaid($this->app->make(OrderRepositoryInterface::class));
+            $reaction->handle($event);
+        });
     }
 
     private function bootPublishing(): void
@@ -148,6 +157,7 @@ class VatlyServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../database/migrations/create_vatly_subscriptions_table.php.stub' => $this->getMigrationFileName('create_vatly_subscriptions_table.php'),
             __DIR__.'/../database/migrations/create_vatly_webhook_calls_table.php.stub' => $this->getMigrationFileName('create_vatly_webhook_calls_table.php'),
+            __DIR__.'/../database/migrations/create_vatly_orders_table.php.stub' => $this->getMigrationFileName('create_vatly_orders_table.php'),
         ], 'vatly-migrations');
     }
 
