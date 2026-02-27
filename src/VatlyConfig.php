@@ -33,12 +33,12 @@ class VatlyConfig implements ConfigurationInterface
         return config('vatly.testmode', false);
     }
 
-    public function getDefaultRedirectUrlSuccess(): string
+    public function getDefaultRedirectUrlSuccess(): ?string
     {
         return config('vatly.redirect_url_success', config('app.url'));
     }
 
-    public function getDefaultRedirectUrlCanceled(): string
+    public function getDefaultRedirectUrlCanceled(): ?string
     {
         return config('vatly.redirect_url_canceled', config('app.url'));
     }
