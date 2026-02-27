@@ -58,6 +58,9 @@ class SubscriptionBuilder
         return $this;
     }
 
+    /**
+     * @param array<string, mixed> $checkoutOptions
+     */
     public function create(array $checkoutOptions = []): CreateVatlyCheckoutResponse
     {
         return $this
@@ -71,6 +74,9 @@ class SubscriptionBuilder
             );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getSubscriptionPayload(): array
     {
         return [
@@ -79,6 +85,9 @@ class SubscriptionBuilder
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getCreateCheckoutPayload(): array
     {
         return $this->checkoutBuilder->payload();

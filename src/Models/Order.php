@@ -19,7 +19,7 @@ use Vatly\Fluent\Contracts\OrderInterface;
  * @property string|null $invoice_number
  * @property string|null $payment_method
  *
- * @method static create(array $array)
+ * @method static create(array<string, mixed> $array)
  * @method static where(string $column, mixed $value)
  */
 class Order extends Model implements OrderInterface
@@ -28,6 +28,9 @@ class Order extends Model implements OrderInterface
 
     protected $guarded = [];
 
+    /**
+     * @return MorphTo<Model, Order>
+     */
     public function owner(): MorphTo
     {
         return $this->morphTo('owner');

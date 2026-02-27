@@ -16,6 +16,9 @@ class SwapVatlySubscriptionPlanResponse
         //
     }
 
+    /**
+     * @return static
+     */
     public static function fromApiResponse(Subscription $response): self
     {
         return new static(

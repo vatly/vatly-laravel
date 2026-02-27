@@ -6,6 +6,9 @@ namespace Vatly\Laravel\VatlyApiActions;
 
 class SwapVatlySubscriptionPlan extends BaseVatlyApiAction
 {
+    /**
+     * @param array<string, mixed> $parameters
+     */
     public function execute(
         string $subscriptionId,
         string $newPlanId,

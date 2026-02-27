@@ -11,8 +11,6 @@ class VatlyHelpers
 {
     /**
      * Get the billable instance by its Vatly customer ID.
-     *
-     * @return \Vatly\Laravel\Billable|null
      */
     public static function findBillable(string $vatlyCustomerId): ?Model
     {

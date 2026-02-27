@@ -9,7 +9,7 @@ use Vatly\Laravel\Models\Subscription;
 
 class CancelSubscriptionWithGracePeriod
 {
-    public function handle(SubscriptionWasCanceledWithGracePeriodAtVatly $event)
+    public function handle(SubscriptionWasCanceledWithGracePeriodAtVatly $event): void
     {
         Subscription::handleSubscriptionWasCanceledWithGracePeriodAtVatly($event);
     }

@@ -8,8 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class CustomerAlreadyCreated extends BaseVatlyException
 {
-    public static function exists(Model $owner)
+    /**
+     * @return static
+     */
+    public static function exists(Model $owner): static
     {
+        /** @phpstan-ignore new.static */
         return new static(class_basename($owner)." is already a Vatly customer with ID {$owner->vatly_id}.");
     }
 }

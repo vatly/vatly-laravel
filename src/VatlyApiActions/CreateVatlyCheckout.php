@@ -6,6 +6,10 @@ namespace Vatly\Laravel\VatlyApiActions;
 
 class CreateVatlyCheckout extends BaseVatlyApiAction
 {
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $filters
+     */
     public function execute(array $payload, array $filters = []): CreateVatlyCheckoutResponse
     {
         $apiResponse = $this->vatlyApiClient->checkouts->create(

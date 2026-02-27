@@ -6,6 +6,9 @@ namespace Vatly\Laravel\Events\Inbound;
 
 class UnsupportedVatlyWebhookCallReceived extends BaseAtVatlyEvent
 {
+    /**
+     * @param array<string, mixed> $object
+     */
     protected function __construct(
         public readonly string $eventName,
         public readonly string $resourceId,

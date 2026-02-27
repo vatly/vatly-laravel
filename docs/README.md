@@ -66,7 +66,7 @@ This creates:
 Add the `Billable` trait and implement `BillableInterface` on your User model:
 
 ```php
-use Vatly\Fluent\Contracts\BillableInterface;
+use Vatly\Laravel\Contracts\BillableInterface;
 use Vatly\Laravel\Billable;
 
 class User extends Authenticatable implements BillableInterface

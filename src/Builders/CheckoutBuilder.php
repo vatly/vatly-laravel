@@ -19,8 +19,14 @@ class CheckoutBuilder
 
     protected string $redirectUrlCanceled;
 
+    /**
+     * @var array<string, mixed>|null
+     */
     protected ?array $metadata = null;
 
+    /**
+     * @var Collection<int, mixed>
+     */
     protected Collection $items;
 
     public function __construct(
@@ -30,6 +36,10 @@ class CheckoutBuilder
         $this->items = new Collection;
     }
 
+    /**
+     * @param array<string, mixed> $overrides
+     * @return array<string, mixed>
+     */
     public function payload(array $overrides = [], bool $filtered = true): array
     {
         $payload = array_merge([
@@ -44,6 +54,10 @@ class CheckoutBuilder
         return $filtered ? array_filter($payload) : $payload;
     }
 
+    /**
+     * @param Collection<int, mixed> $items
+     * @param array<string, mixed> $payloadOverrides
+     */
     public function create(
         Collection $items,
         string $redirectUrlSuccess,
@@ -82,6 +96,9 @@ class CheckoutBuilder
         return $this;
     }
 
+    /**
+     * @param array<string, mixed> $metadata
+     */
     public function withMetadata(array $metadata): self
     {
         $this->metadata = $metadata;
@@ -89,6 +106,9 @@ class CheckoutBuilder
         return $this;
     }
 
+    /**
+     * @param Collection<int, mixed> $items
+     */
     public function withItems(Collection $items): self
     {
         $items->each(fn ($item) => $this->items->add($item));

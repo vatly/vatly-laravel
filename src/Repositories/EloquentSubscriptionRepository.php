@@ -44,11 +44,17 @@ class EloquentSubscriptionRepository implements SubscriptionRepositoryInterface
         return $subscription !== null && $subscription->isActive();
     }
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
     public function create(array $attributes): SubscriptionInterface
     {
         return Subscription::create($attributes);
     }
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
     public function update(SubscriptionInterface $subscription, array $attributes): SubscriptionInterface
     {
         if ($subscription instanceof Subscription) {
