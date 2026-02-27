@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Concerns;
 
-use Vatly\Fluent\Actions\CreateCheckout;
-use Vatly\Fluent\Builders\CheckoutBuilder;
+use Vatly\Laravel\Builders\CheckoutBuilder;
 use Vatly\Laravel\Builders\SubscriptionBuilder;
+use Vatly\Laravel\VatlyApiActions\CreateVatlyCheckout;
 use Vatly\Laravel\VatlyConfig;
 
 trait ManagesCheckouts
@@ -17,7 +17,7 @@ trait ManagesCheckouts
 
         return new CheckoutBuilder(
             owner: $this,
-            createCheckout: app()->make(CreateCheckout::class),
+            createVatlyCheckout: app()->make(CreateVatlyCheckout::class),
         );
     }
 
