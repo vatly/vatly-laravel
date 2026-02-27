@@ -14,7 +14,10 @@ abstract class BaseVatlyCustomerResponse
         //
     }
 
-    public static function fromApiResponse(Customer $response)
+    /**
+     * @return static
+     */
+    public static function fromApiResponse(Customer $response): static
     {
         return new static(
             customerId: $response->id,

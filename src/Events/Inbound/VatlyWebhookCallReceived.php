@@ -15,6 +15,9 @@ class VatlyWebhookCallReceived
     //use InteractsWithSockets;
     //use SerializesModels;
 
+    /**
+     * @param array<string, mixed> $object
+     */
     public function __construct(
         public readonly string $eventName,
         public readonly string $resourceId,
@@ -26,6 +29,9 @@ class VatlyWebhookCallReceived
         //
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return [

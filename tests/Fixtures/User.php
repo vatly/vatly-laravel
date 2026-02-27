@@ -21,9 +21,9 @@ class User extends Authenticatable implements BillableInterface
         return parent::getKey();
     }
 
-    public function save(array $options = []): void
+    public function save(array $options = []): mixed
     {
-        parent::save($options);
+        return parent::save($options);
     }
 
     protected static function newFactory()

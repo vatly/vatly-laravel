@@ -29,11 +29,17 @@ class EloquentOrderRepository implements OrderRepositoryInterface
             ->all();
     }
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
     public function create(array $attributes): OrderInterface
     {
         return Order::create($attributes);
     }
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
     public function update(OrderInterface $order, array $attributes): OrderInterface
     {
         if ($order instanceof Order) {

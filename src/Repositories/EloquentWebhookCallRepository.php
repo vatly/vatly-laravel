@@ -10,6 +10,9 @@ use Vatly\Laravel\Models\VatlyWebhookCall;
 
 class EloquentWebhookCallRepository implements WebhookCallRepositoryInterface
 {
+    /**
+     * @param array<string, mixed> $payload
+     */
     public function record(
         string $eventName,
         string $resourceId,

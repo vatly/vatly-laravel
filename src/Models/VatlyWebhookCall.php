@@ -10,14 +10,14 @@ use Illuminate\Support\Arr;
 use Vatly\Laravel\Events\Inbound\VatlyWebhookCallReceived;
 
 /**
- * @property int id
- * @property string event_name
- * @property string resource_id
- * @property string resource_name
- * @property string vatly_customer_id
- * @property array object
- * @property bool testmode
- * @property \Carbon\Carbon raised_at
+ * @property int $id
+ * @property string $event_name
+ * @property string $resource_id
+ * @property string $resource_name
+ * @property string $vatly_customer_id
+ * @property array<string, mixed> $object
+ * @property bool $testmode
+ * @property \Carbon\Carbon $raised_at
  */
 class VatlyWebhookCall extends Model
 {
@@ -43,6 +43,7 @@ class VatlyWebhookCall extends Model
 
     public static function record(VatlyWebhookCallReceived $event): void
     {
+        /** @phpstan-ignore identical.alwaysFalse */
         if (self::DEFAULT_DAYS_TO_RETAIN === 0) {
             return;
         }
@@ -60,8 +61,8 @@ class VatlyWebhookCall extends Model
         ]);
     }
 
-    public static function cleanUp(int $daysToRetain = self::DEFAULT_DAYS_TO_RETAIN): void
+    public static function cleanUp(int $daysToRetain = self::DEFAULT_DAYS_TO_RETAIN): int
     {
-        static::where('created_at', '<', Carbon::now()->subDays($daysToRetain))->delete();
+        return static::where('created_at', '<', Carbon::now()->subDays($daysToRetain))->delete();
     }
 }

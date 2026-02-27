@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Concerns;
 
+use Vatly\API\Resources\Customer;
 use Vatly\Fluent\Actions\CreateCustomer;
 use Vatly\Fluent\Actions\GetCustomer;
-use Vatly\Fluent\Actions\Responses\CreateCustomerResponse;
-use Vatly\Fluent\Actions\Responses\CustomerResponse;
-use Vatly\Fluent\Actions\Responses\GetCustomerResponse;
 use Vatly\Fluent\Exceptions\CustomerAlreadyCreatedException;
 use Vatly\Fluent\Exceptions\FeatureUnavailableException;
 use Vatly\Fluent\Exceptions\InvalidCustomerException;
@@ -80,7 +78,7 @@ trait ManagesCustomer
         }
     }
 
-    public function createAsVatlyCustomer(array $options = []): CreateCustomerResponse
+    public function createAsVatlyCustomer(array $options = []): Customer
     {
         if ($this->hasVatlyId()) {
             throw CustomerAlreadyCreatedException::exists($this);
@@ -94,21 +92,21 @@ trait ManagesCustomer
             $options['name'] = $name;
         }
 
-        /** @var CreateCustomerResponse $response */
-        $response = app()->make(CreateCustomer::class)->execute($options);
+        /** @var Customer $customer */
+        $customer = app()->make(CreateCustomer::class)->execute($options);
 
-        $this->vatly_id = $response->customerId;
+        $this->vatly_id = $customer->id;
         $this->saveQuietly();
 
-        return $response;
+        return $customer;
     }
 
-    public function updateVatlyCustomer(array $options = []): CustomerResponse
+    public function updateVatlyCustomer(array $options = []): Customer
     {
         throw FeatureUnavailableException::notImplementedOnApi();
     }
 
-    public function createOrGetVatlyCustomer(array $options = []): CustomerResponse
+    public function createOrGetVatlyCustomer(array $options = []): Customer
     {
         if ($this->hasVatlyId()) {
             return $this->asVatlyCustomer();
@@ -126,7 +124,7 @@ trait ManagesCustomer
         $this->createAsVatlyCustomer($createVatlyCustomerOptions);
     }
 
-    public function updateOrCreateVatlyCustomer(array $options = []): CustomerResponse
+    public function updateOrCreateVatlyCustomer(array $options = []): Customer
     {
         if ($this->hasVatlyId()) {
             return $this->updateVatlyCustomer($options);
@@ -135,7 +133,7 @@ trait ManagesCustomer
         return $this->createAsVatlyCustomer($options);
     }
 
-    public function syncOrCreateVatlyCustomer(array $options = []): CustomerResponse
+    public function syncOrCreateVatlyCustomer(array $options = []): Customer
     {
         if ($this->hasVatlyId()) {
             return $this->syncVatlyCustomerDetails();
@@ -144,14 +142,14 @@ trait ManagesCustomer
         return $this->createAsVatlyCustomer($options);
     }
 
-    public function asVatlyCustomer(): GetCustomerResponse
+    public function asVatlyCustomer(): Customer
     {
         $this->assertCustomerExists();
 
         return app()->make(GetCustomer::class)->execute($this->vatly_id);
     }
 
-    public function syncVatlyCustomerDetails(): CustomerResponse
+    public function syncVatlyCustomerDetails(): Customer
     {
         return $this->updateVatlyCustomer([
             'name' => $this->getVatlyName(),

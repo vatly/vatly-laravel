@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Tests;
 
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Orchestra\Testbench\TestCase;
 use Vatly\Laravel\VatlyServiceProvider;
 
 abstract class BaseTestCase extends TestCase
 {
+    use MockeryPHPUnitIntegration;
+
     protected function getPackageProviders($app): array
     {
         return [

@@ -27,7 +27,7 @@ use Vatly\Laravel\Repositories\EloquentCustomerRepository;
  * @property int $quantity
  * @property Carbon|null $ends_at
  *
- * @method static create(array $array)
+ * @method static create(array<string, mixed> $array)
  * @method static where(string $column, mixed $value)
  */
 class Subscription extends Model implements SubscriptionInterface
@@ -43,6 +43,9 @@ class Subscription extends Model implements SubscriptionInterface
         'ends_at' => 'datetime',
     ];
 
+    /**
+     * @return MorphTo<Model, Subscription>
+     */
     public function owner(): MorphTo
     {
         return $this->morphTo('owner');
@@ -119,6 +122,9 @@ class Subscription extends Model implements SubscriptionInterface
 
     // Business logic
 
+    /**
+     * @param array<string, mixed> $options
+     */
     public function swap(string $type, string $planId, array $options = []): self
     {
         /** @var SwapSubscriptionPlan $action */
@@ -139,6 +145,8 @@ class Subscription extends Model implements SubscriptionInterface
      *
      * This applies the plan change immediately and creates an invoice
      * for any prorated charges right away.
+     *
+     * @param array<string, mixed> $options
      */
     public function swapAndInvoice(string $type, string $planId, array $options = []): self
     {
@@ -156,6 +164,8 @@ class Subscription extends Model implements SubscriptionInterface
 
     /**
      * Get the URL where the customer can update their payment method.
+     *
+     * @param array<string, mixed> $prefillData
      */
     public function updatePaymentMethodUrl(array $prefillData = []): string
     {
@@ -163,7 +173,7 @@ class Subscription extends Model implements SubscriptionInterface
         $action = app()->make(\Vatly\Fluent\Actions\GetPaymentMethodUpdateUrl::class);
         $response = $action->execute($this->vatly_id, $prefillData);
 
-        return $response->url;
+        return $response->href;
     }
 
     /**
@@ -178,7 +188,7 @@ class Subscription extends Model implements SubscriptionInterface
         $response = $action->execute($this->vatly_id);
 
         $updates = [
-            'plan_id' => $response->planId,
+            'plan_id' => $response->subscriptionPlanId,
             'name' => $response->name,
             'quantity' => $response->quantity,
         ];
@@ -193,8 +203,8 @@ class Subscription extends Model implements SubscriptionInterface
         }
 
         // Sync trial end date if present
-        if ($response->trialEndAt !== null) {
-            $updates['trial_ends_at'] = Carbon::parse($response->trialEndAt);
+        if ($response->trialUntil !== null) {
+            $updates['trial_ends_at'] = Carbon::parse($response->trialUntil);
         }
 
         $this->update($updates);

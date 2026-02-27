@@ -16,6 +16,9 @@ class GetVatlyCheckoutResponse
         //
     }
 
+    /**
+     * @return static
+     */
     public static function fromApiResponse(Checkout $response): self
     {
         return new static(

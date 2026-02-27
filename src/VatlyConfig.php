@@ -35,12 +35,12 @@ class VatlyConfig implements ConfigurationInterface
 
     public function getDefaultRedirectUrlSuccess(): string
     {
-        return config('vatly.redirect_url_success', config('app.url'));
+        return config('vatly.redirect_url_success') ?? config('app.url') ?? '/';
     }
 
     public function getDefaultRedirectUrlCanceled(): string
     {
-        return config('vatly.redirect_url_canceled', config('app.url'));
+        return config('vatly.redirect_url_canceled') ?? config('app.url') ?? '/';
     }
 
     public function getBillableModel(): string
