@@ -21,6 +21,19 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('vatly_orders', function (Blueprint $table) {
+            $table->id();
+            $table->morphs('owner');
+            $table->string('vatly_id')->unique();
+            $table->string('status');
+            $table->integer('total');
+            $table->string('currency');
+            $table->string('invoice_number')->nullable();
+            $table->string('payment_method')->nullable();
+            $table->string('customer_id')->nullable()->index();
+            $table->timestamps();
+        });
+
         Schema::create('vatly_webhook_calls', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
