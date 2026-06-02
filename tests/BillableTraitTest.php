@@ -14,7 +14,9 @@ use Vatly\Fluent\Exceptions\InvalidOrderException;
 use Vatly\Fluent\OrderHandle;
 use Vatly\Fluent\SubscriptionHandle;
 use Vatly\Fluent\Vatly;
+use Vatly\Laravel\Models\Chargeback;
 use Vatly\Laravel\Models\Order;
+use Vatly\Laravel\Models\Refund;
 use Vatly\Laravel\Models\Subscription;
 
 class BillableTraitTest extends BaseTestCase
@@ -113,6 +115,57 @@ class BillableTraitTest extends BaseTestCase
         $user = User::factory()->create();
 
         $this->assertInstanceOf(CheckoutBuilder::class, $user->checkout());
+    }
+
+    public function test_refunds_relation_returns_owned_refunds(): void
+    {
+        $user = User::factory()->create(['vatly_id' => 'customer_refunds']);
+
+        Refund::create([
+            'owner_type' => $user->getMorphClass(),
+            'owner_id' => $user->getKey(),
+            'vatly_id' => 'refund_owned',
+            'original_order_id' => 'order_1',
+            'status' => 'refunded',
+            'total' => 9900,
+            'currency' => 'EUR',
+        ]);
+        // A refund owned by nobody (anonymous flow) must not leak in.
+        Refund::create([
+            'vatly_id' => 'refund_orphan',
+            'original_order_id' => 'order_2',
+            'status' => 'refunded',
+            'total' => 100,
+            'currency' => 'EUR',
+        ]);
+
+        $this->assertCount(1, $user->refunds);
+        $this->assertSame('refund_owned', $user->refunds->first()->getVatlyId());
+    }
+
+    public function test_chargebacks_relation_returns_owned_chargebacks(): void
+    {
+        $user = User::factory()->create(['vatly_id' => 'customer_chargebacks']);
+
+        Chargeback::create([
+            'owner_type' => $user->getMorphClass(),
+            'owner_id' => $user->getKey(),
+            'vatly_id' => 'chargeback_owned',
+            'original_order_id' => 'order_1',
+            'status' => 'pending',
+            'total' => 9900,
+            'currency' => 'EUR',
+        ]);
+        Chargeback::create([
+            'vatly_id' => 'chargeback_orphan',
+            'original_order_id' => 'order_2',
+            'status' => 'pending',
+            'total' => 100,
+            'currency' => 'EUR',
+        ]);
+
+        $this->assertCount(1, $user->chargebacks);
+        $this->assertSame('chargeback_owned', $user->chargebacks->first()->getVatlyId());
     }
 
     public function test_vatly_accessors_read_eloquent_columns(): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Vatly\Laravel\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Vatly\Fluent\Contracts\OrderInterface;
 use Vatly\Fluent\OrderHandle;
@@ -45,6 +46,35 @@ class Order extends Model implements OrderInterface
     public function owner(): MorphTo
     {
         return $this->morphTo('owner');
+    }
+
+    /**
+     * Refunds issued against this order.
+     *
+     * Linked on the Vatly order id (`original_order_id` → `vatly_id`) rather
+     * than the local primary key, since refund rows reference the order by its
+     * Vatly id.
+     *
+     * @return HasMany<Refund, $this>
+     */
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class, 'original_order_id', 'vatly_id')
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * Chargebacks raised against this order.
+     *
+     * Linked on the Vatly order id (`original_order_id` → `vatly_id`), mirroring
+     * {@see self::refunds()}.
+     *
+     * @return HasMany<Chargeback, $this>
+     */
+    public function chargebacks(): HasMany
+    {
+        return $this->hasMany(Chargeback::class, 'original_order_id', 'vatly_id')
+            ->orderByDesc('created_at');
     }
 
     // OrderInterface implementation

@@ -126,6 +126,12 @@ foreach ($user->orders as $order) {
 // Or explicit lookup
 $invoiceUrl = $user->order('order_abc')->invoiceUrl();
 
+// Refunds & chargebacks — owned-by-customer and per-order relations
+$user->refunds;                                         // all refunds for this customer
+$user->chargebacks;                                     // all chargebacks (disputes) for this customer
+$order->refunds;                                        // refunds against this order
+$order->chargebacks;                                    // chargebacks against this order
+
 // Static finders
 $user = User::findBillable('customer_xyz');             // ?User
 $user = User::findBillableOrFail('customer_xyz');       // User
