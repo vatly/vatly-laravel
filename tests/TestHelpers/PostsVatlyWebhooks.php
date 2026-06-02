@@ -8,6 +8,7 @@ use Illuminate\Testing\TestResponse;
 use Mockery;
 use ReflectionClass;
 use Vatly\API\Exceptions\ApiException;
+use Vatly\API\Resources\Chargeback as ApiChargeback;
 use Vatly\API\Resources\Checkout as ApiCheckout;
 use Vatly\API\Resources\Order as ApiOrder;
 use Vatly\API\Resources\Refund as ApiRefund;
@@ -16,6 +17,7 @@ use Vatly\API\Types\Mandate;
 use Vatly\API\Types\Money;
 use Vatly\API\Types\TaxSummaryCollection;
 use Vatly\API\VatlyApiClient;
+use Vatly\Fluent\Actions\GetChargeback;
 use Vatly\Fluent\Actions\GetCheckout;
 use Vatly\Fluent\Actions\GetOrder;
 use Vatly\Fluent\Actions\GetRefund;
@@ -186,6 +188,26 @@ trait PostsVatlyWebhooks
         $this->app->forgetInstance(WebhookProcessor::class);
     }
 
+    /**
+     * Replace the cached `GetChargeback` action on the composition root so the
+     * `order.chargeback_*` webhook flow doesn't need a real API call. The
+     * factory enriches chargeback events via this action to carry the customer
+     * id, dispute status, and full tax breakdown.
+     */
+    protected function fakeGetChargeback(ApiChargeback $chargeback): void
+    {
+        $action = Mockery::mock(GetChargeback::class);
+        $action->shouldReceive('execute')->andReturn($chargeback);
+
+        $vatly = $this->app->make(Vatly::class);
+
+        $this->writeVatlyPrivate($vatly, 'getChargeback', $action);
+        $this->writeVatlyPrivate($vatly, 'webhookEventFactory', null);
+        $this->writeVatlyPrivate($vatly, 'webhookProcessor', null);
+
+        $this->app->forgetInstance(WebhookProcessor::class);
+    }
+
     protected function fakeGetSubscription(ApiSubscription $subscription): void
     {
         $this->fakeGetSubscriptions([
@@ -326,5 +348,43 @@ trait PostsVatlyWebhooks
         ));
 
         return $refund;
+    }
+
+    /**
+     * @param  array{
+     *   id: string,
+     *   customerId: string,
+     *   originalOrderId: string,
+     *   status: string,
+     *   totalValue: string,
+     *   subtotalValue: string,
+     *   currency: string,
+     *   reason?: string,
+     *   taxRates: array<int, array{name: string, percentage: float, taxablePercentage: float, amount: string}>,
+     * }  $data
+     */
+    protected function buildApiChargeback(array $data): ApiChargeback
+    {
+        $chargeback = new ApiChargeback(Mockery::mock(VatlyApiClient::class));
+        $chargeback->id = $data['id'];
+        $chargeback->customerId = $data['customerId'];
+        $chargeback->originalOrderId = $data['originalOrderId'];
+        $chargeback->status = $data['status'];
+        $chargeback->reason = $data['reason'] ?? '';
+        $chargeback->total = new Money($data['currency'], $data['totalValue']);
+        $chargeback->subtotal = new Money($data['currency'], $data['subtotalValue']);
+        $chargeback->taxSummary = new TaxSummaryCollection(array_map(
+            fn (array $rate) => [
+                'taxRate' => [
+                    'name' => $rate['name'],
+                    'percentage' => $rate['percentage'],
+                    'taxablePercentage' => $rate['taxablePercentage'],
+                ],
+                'amount' => ['currency' => $data['currency'], 'value' => $rate['amount']],
+            ],
+            $data['taxRates'],
+        ));
+
+        return $chargeback;
     }
 }

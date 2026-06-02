@@ -24,6 +24,22 @@ class EloquentRefundRepository implements RefundRepositoryInterface
         return Refund::where('vatly_id', $vatlyId)->first();
     }
 
+    /**
+     * @return RefundInterface[]
+     */
+    public function listForCustomer(string $customerId): array
+    {
+        return Refund::where('customer_id', $customerId)->get()->all();
+    }
+
+    /**
+     * @return RefundInterface[]
+     */
+    public function listForOrder(string $vatlyOrderId): array
+    {
+        return Refund::where('original_order_id', $vatlyOrderId)->get()->all();
+    }
+
     public function store(StoreRefundData $data): RefundInterface
     {
         $attrs = [
