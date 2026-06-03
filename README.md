@@ -181,7 +181,7 @@ Event::listen(OrderPaid::class, function (OrderPaid $event) {
 The webhook event DTOs live in `vatly-api-php` (alongside the rest of the API
 contracts) under the `Vatly\API\Webhooks\Events\` namespace, so a webhook field
 change is a single api-php release that flows through every integration. The
-one exception is `LocalSubscriptionCreated`, which is an internal fluent signal
+one exception is `SubscriptionWasCreatedFromWebhook`, which is an internal fluent signal
 (not a webhook payload) and stays under `Vatly\Fluent\Events\`.
 
 Events available:
@@ -199,7 +199,7 @@ Events available:
 - `Vatly\API\Webhooks\Events\SubscriptionCanceledWithGracePeriod`
 - `Vatly\API\Webhooks\Events\SubscriptionCancellationGracePeriodCompleted` — the grace period set at cancellation has elapsed; carries `customerId`, `subscriptionId`, `endsAt`. The local subscription's `ends_at` is stamped to the actual end (self-healing a missed `subscription.canceled_with_grace_period` webhook and correcting any drift); also dispatched so you can flip your own application-level "fully ended" state without polling.
 - `Vatly\API\Webhooks\Events\UnsupportedWebhookReceived`
-- `Vatly\Fluent\Events\LocalSubscriptionCreated` — internal fluent signal (not a webhook payload).
+- `Vatly\Fluent\Events\SubscriptionWasCreatedFromWebhook` — internal fluent signal (not a webhook payload).
 
 Refund webhooks (`refund.completed` / `refund.failed` / `refund.canceled`) are persisted to the `vatly_refunds` table via the bundled `Refund` model and `EloquentRefundRepository`. Chargeback webhooks (`order.chargeback_received` / `order.chargeback_reversed`) are persisted the same way to the `vatly_chargebacks` table via the bundled `Chargeback` model and `EloquentChargebackRepository` — Vatly's public order status doesn't change on a chargeback, so also wire your own listener if you need to suspend/reinstate access.
 
