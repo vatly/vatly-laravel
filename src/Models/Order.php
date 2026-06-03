@@ -125,4 +125,54 @@ class Order extends Model implements OrderInterface
     {
         return app(Vatly::class)->order($this)->invoiceUrl();
     }
+
+    // Reversal read surface.
+    //
+    // The order's own `status` stays terminal `paid` even after a refund or
+    // chargeback; reversal progress is read live from the Vatly API rather than
+    // synthesized into a local status. These delegate to the framework-agnostic
+    // {@see OrderHandle} helpers (which memoize a single API fetch per call),
+    // so consumers can iterate the orders relation and ask each model directly.
+
+    /**
+     * Subtotal (net of tax, in integer cents) that has been reversed —
+     * refunded and/or charged back — per the live API order.
+     */
+    public function reversedSubtotal(): int
+    {
+        return app(Vatly::class)->order($this)->reversedSubtotal();
+    }
+
+    /**
+     * Subtotal (net of tax, in integer cents) still available to reverse per
+     * the live API order.
+     */
+    public function refundableSubtotal(): int
+    {
+        return app(Vatly::class)->order($this)->refundableSubtotal();
+    }
+
+    /**
+     * Whether any of the order's subtotal has been reversed.
+     */
+    public function isReversed(): bool
+    {
+        return app(Vatly::class)->order($this)->isReversed();
+    }
+
+    /**
+     * Whether the order is reversed but not in full.
+     */
+    public function isPartiallyReversed(): bool
+    {
+        return app(Vatly::class)->order($this)->isPartiallyReversed();
+    }
+
+    /**
+     * Whether the order's full subtotal has been reversed.
+     */
+    public function isFullyReversed(): bool
+    {
+        return app(Vatly::class)->order($this)->isFullyReversed();
+    }
 }
