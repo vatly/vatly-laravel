@@ -649,7 +649,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
                 && $event->customerId === 'customer_abc'
                 && $event->originalOrderId === 'order_abc123'
                 && $event->status === 'refunded'
-                && $event->total === 9900,
+                && $event->total->toCents() === 9900,
         );
     }
 

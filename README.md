@@ -174,6 +174,9 @@ Vatly events are dispatched on Laravel's event bus — register listeners the us
 use Vatly\API\Webhooks\Events\OrderPaid;
 
 Event::listen(OrderPaid::class, function (OrderPaid $event) {
+    $event->total->toCents();   // 9900 — minor units
+    $event->total->currency;    // "EUR"
+
     // send receipt, etc.
 });
 ```
@@ -187,7 +190,7 @@ which are internal fluent signals (not webhook payloads) and stay under
 
 Events available:
 
-- `Vatly\API\Webhooks\Events\OrderPaid` — carries `total`, `subtotal`, `taxSummary` (full per-rate breakdown), `currency`, `invoiceNumber`, `paymentMethod`. Materialize local invoices without an extra API call.
+- `Vatly\API\Webhooks\Events\OrderPaid` — carries `total`, `subtotal` (both `Vatly\API\Types\Money`), `taxSummary` (full per-rate breakdown), `invoiceNumber`, `paymentMethod`. Read the currency via `$event->total->currency` and minor units via `$event->total->toCents()` (there's no standalone `currency` field). Materialize local invoices without an extra API call.
 - `Vatly\API\Webhooks\Events\OrderCanceled` — the local order's status is mirrored to `canceled`.
 - `Vatly\API\Webhooks\Events\OrderChargebackReceived` / `OrderChargebackReversed` — dispute signals carrying the affected `orderId`, enriched with `customerId`, dispute `status`, totals and `taxSummary`; persisted to `vatly_chargebacks` (see below). Also react to suspend/reinstate access — a chargeback never mutates the local order row.
 - `Vatly\API\Webhooks\Events\OrderPaymentFailed` — same enriched order shape as `OrderPaid`; typically the start of dunning.
@@ -278,7 +281,7 @@ See [`tests/Http/Controllers/VatlyInboundWebhookControllerTest.php`](tests/Http/
 
 The ecosystem splits into three layers:
 
-- [`vatly/vatly-api-php`](https://github.com/Vatly/vatly-api-php) owns the API client and every wire contract — REST resources, value types (`Money`, `TaxSummaryCollection`), the `Vatly\API\Data\OrderLineData` DTO, and the webhook event DTOs under `Vatly\API\Webhooks\Events\`. A webhook-payload change is a single api-php release.
+- [`vatly/vatly-api-php`](https://github.com/Vatly/vatly-api-php) owns the API client and every wire contract — REST resources, value types (`Money`, `TaxSummaryCollection`), the `Vatly\API\Types\OrderLineData` DTO, and the webhook event DTOs under `Vatly\API\Webhooks\Events\`. A webhook-payload change is a single api-php release.
 - [`vatly/vatly-fluent-php`](https://github.com/Vatly/vatly-fluent-php) is the framework-agnostic core: the contracts, composition root (`Vatly`), webhook pipeline (factory / processor / reactions that consume the api-php event DTOs), and the operation wrappers (`Vatly\Fluent\SubscriptionHandle`, `Vatly\Fluent\OrderHandle`).
 - This package is the thin Laravel driver on top of fluent. It supplies:
 

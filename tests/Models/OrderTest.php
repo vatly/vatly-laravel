@@ -7,9 +7,9 @@ namespace Vatly\Laravel\Tests\Models;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
-use Vatly\API\Data\OrderLineData;
 use Vatly\API\Resources\Order as ApiOrder;
 use Vatly\API\Types\Money as ApiMoney;
+use Vatly\API\Types\OrderLineData;
 use Vatly\API\VatlyApiClient;
 use Vatly\Fluent\Actions\GetOrder;
 use Vatly\Fluent\Contracts\OrderInterface;
@@ -231,9 +231,9 @@ class OrderTest extends BaseTestCase
                     vatlyId: 'order_item_x',
                     description: 'Pro plan — monthly',
                     quantity: 1,
-                    basePrice: 9900,
-                    total: 9900,
-                    subtotal: 8182,
+                    basePrice: new ApiMoney('EUR', '99.00'),
+                    total: new ApiMoney('EUR', '99.00'),
+                    subtotal: new ApiMoney('EUR', '81.82'),
                     productType: 'subscription',
                     productId: 'subscription_42',
                 ),

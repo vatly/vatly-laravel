@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Repositories;
 
-use Vatly\API\Data\OrderLineData;
+use Vatly\API\Types\OrderLineData;
 use Vatly\Fluent\Contracts\OrderLineInterface;
 use Vatly\Fluent\Contracts\OrderLineRepositoryInterface;
 use Vatly\Laravel\Models\OrderLine;
@@ -40,9 +40,9 @@ class EloquentOrderLineRepository implements OrderLineRepositoryInterface
             'vatly_id' => $data->vatlyId,
             'description' => $data->description,
             'quantity' => $data->quantity,
-            'base_price' => $data->basePrice,
-            'total' => $data->total,
-            'subtotal' => $data->subtotal,
+            'base_price' => $data->basePrice->toCents(),
+            'total' => $data->total->toCents(),
+            'subtotal' => $data->subtotal->toCents(),
             'tax_summary' => $this->serializeTaxSummary($data->taxSummary),
             'product_type' => $data->productType,
             'product_id' => $data->productId,

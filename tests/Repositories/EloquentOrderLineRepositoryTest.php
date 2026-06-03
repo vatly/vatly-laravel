@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Vatly\Laravel\Tests\Repositories;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Vatly\API\Data\OrderLineData;
+use Vatly\API\Types\Money;
+use Vatly\API\Types\OrderLineData;
 use Vatly\Laravel\Models\OrderLine;
 use Vatly\Laravel\Repositories\EloquentOrderLineRepository;
 use Vatly\Laravel\Tests\BaseTestCase;
@@ -62,9 +63,9 @@ class EloquentOrderLineRepositoryTest extends BaseTestCase
                 vatlyId: 'order_item_store',
                 description: 'Pro plan — monthly',
                 quantity: 1,
-                basePrice: 9900,
-                total: 9900,
-                subtotal: 8182,
+                basePrice: new Money('EUR', '99.00'),
+                total: new Money('EUR', '99.00'),
+                subtotal: new Money('EUR', '81.82'),
                 taxSummary: null,
                 productType: 'subscription',
                 productId: 'subscription_123',
@@ -82,6 +83,9 @@ class EloquentOrderLineRepositoryTest extends BaseTestCase
             'order_vatly_id' => 'order_store',
             'product_type' => 'subscription',
             'product_id' => 'subscription_123',
+            'base_price' => 9900,
+            'total' => 9900,
+            'subtotal' => 8182,
         ]);
     }
 
