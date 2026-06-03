@@ -8,12 +8,17 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Vatly\API\Types\Mandate;
-use Vatly\Fluent\Events\CheckoutCanceled;
-use Vatly\Fluent\Events\CheckoutExpired;
-use Vatly\Fluent\Events\CheckoutFailed;
-use Vatly\Fluent\Events\CheckoutPaid;
-use Vatly\Fluent\Events\PaymentFailed;
-use Vatly\Fluent\Events\SubscriptionCancellationGracePeriodCompleted;
+use Vatly\API\Webhooks\Events\CheckoutCanceled;
+use Vatly\API\Webhooks\Events\CheckoutExpired;
+use Vatly\API\Webhooks\Events\CheckoutFailed;
+use Vatly\API\Webhooks\Events\CheckoutPaid;
+use Vatly\API\Webhooks\Events\OrderChargebackReceived;
+use Vatly\API\Webhooks\Events\OrderChargebackReversed;
+use Vatly\API\Webhooks\Events\PaymentFailed;
+use Vatly\API\Webhooks\Events\RefundCanceled;
+use Vatly\API\Webhooks\Events\RefundCompleted;
+use Vatly\API\Webhooks\Events\RefundFailed;
+use Vatly\API\Webhooks\Events\SubscriptionCancellationGracePeriodCompleted;
 use Vatly\Laravel\Models\Chargeback;
 use Vatly\Laravel\Models\Order;
 use Vatly\Laravel\Models\Refund;
@@ -201,7 +206,11 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
 
         $order = Order::where('vatly_id', 'order_tax_1')->firstOrFail();
         $this->assertSame(4131, $order->subtotal);
-        $this->assertSame('Sales Tax', $order->tax_summary[0]['rate']['name']);
+        $this->assertSame('Sales Tax', $order->tax_summary[0]['taxRate']['name']);
+        // JSON has no int/float distinction, so a whole-number percentage decodes
+        // back as an int — assert by value, not type.
+        $this->assertEquals(21.0, $order->tax_summary[0]['taxRate']['percentage']);
+        $this->assertEquals(100.0, $order->tax_summary[0]['taxRate']['taxablePercentage']);
         $this->assertSame(868, $order->tax_summary[0]['amount']);
         $this->assertSame('USD', $order->tax_summary[0]['currency']);
         $this->assertSame($user->id, $order->owner_id);
@@ -555,6 +564,176 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         $this->assertSame(8182, $refund->subtotal);
         $this->assertSame(1718, $refund->tax_summary[0]['amount']);
         $this->assertTrue($refund->isCompleted());
+    }
+
+    public function test_it_dispatches_the_refund_completed_event_from_webhook(): void
+    {
+        Event::fake([RefundCompleted::class]);
+
+        User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        $this->fakeGetRefund($this->buildApiRefund([
+            'id' => 'refund_evt_1',
+            'customerId' => 'customer_abc',
+            'originalOrderId' => 'order_abc123',
+            'status' => 'refunded',
+            'totalValue' => '99.00',
+            'subtotalValue' => '81.82',
+            'currency' => 'EUR',
+            'taxRates' => [
+                ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
+            ],
+        ]));
+
+        $this->postWebhookEvent('refund.completed', 'refund_evt_1', 'refund', [
+            'customerId' => 'customer_abc',
+        ])->assertStatus(201);
+
+        Event::assertDispatched(
+            RefundCompleted::class,
+            fn (RefundCompleted $event): bool => $event->refundId === 'refund_evt_1'
+                && $event->customerId === 'customer_abc'
+                && $event->originalOrderId === 'order_abc123'
+                && $event->status === 'refunded'
+                && $event->total === 9900,
+        );
+    }
+
+    public function test_it_dispatches_the_refund_failed_event_from_webhook(): void
+    {
+        Event::fake([RefundFailed::class]);
+
+        User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        $this->fakeGetRefund($this->buildApiRefund([
+            'id' => 'refund_evt_2',
+            'customerId' => 'customer_abc',
+            'originalOrderId' => 'order_abc123',
+            'status' => 'failed',
+            'totalValue' => '99.00',
+            'subtotalValue' => '81.82',
+            'currency' => 'EUR',
+            'taxRates' => [
+                ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
+            ],
+        ]));
+
+        $this->postWebhookEvent('refund.failed', 'refund_evt_2', 'refund', [
+            'customerId' => 'customer_abc',
+        ])->assertStatus(201);
+
+        Event::assertDispatched(
+            RefundFailed::class,
+            fn (RefundFailed $event): bool => $event->refundId === 'refund_evt_2'
+                && $event->customerId === 'customer_abc'
+                && $event->originalOrderId === 'order_abc123'
+                && $event->status === 'failed',
+        );
+    }
+
+    public function test_it_dispatches_the_refund_canceled_event_from_webhook(): void
+    {
+        Event::fake([RefundCanceled::class]);
+
+        User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        $this->fakeGetRefund($this->buildApiRefund([
+            'id' => 'refund_evt_3',
+            'customerId' => 'customer_abc',
+            'originalOrderId' => 'order_abc123',
+            'status' => 'canceled',
+            'totalValue' => '99.00',
+            'subtotalValue' => '81.82',
+            'currency' => 'EUR',
+            'taxRates' => [
+                ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
+            ],
+        ]));
+
+        $this->postWebhookEvent('refund.canceled', 'refund_evt_3', 'refund', [
+            'customerId' => 'customer_abc',
+        ])->assertStatus(201);
+
+        Event::assertDispatched(
+            RefundCanceled::class,
+            fn (RefundCanceled $event): bool => $event->refundId === 'refund_evt_3'
+                && $event->customerId === 'customer_abc'
+                && $event->originalOrderId === 'order_abc123'
+                && $event->status === 'canceled',
+        );
+    }
+
+    public function test_it_dispatches_the_chargeback_received_event_from_webhook(): void
+    {
+        Event::fake([OrderChargebackReceived::class]);
+
+        User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        $this->fakeGetChargeback($this->buildApiChargeback([
+            'id' => 'chargeback_evt_1',
+            'customerId' => 'customer_abc',
+            'originalOrderId' => 'order_abc123',
+            'status' => 'pending',
+            'reason' => 'fraud',
+            'totalValue' => '99.00',
+            'subtotalValue' => '81.82',
+            'currency' => 'EUR',
+            'taxRates' => [
+                ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
+            ],
+        ]));
+
+        $this->postWebhookEvent('order.chargeback_received', 'order_abc123', 'order', [
+            'id' => 'chargeback_evt_1',
+            'originalOrderId' => 'order_abc123',
+            'reason' => 'fraud',
+        ])->assertStatus(201);
+
+        Event::assertDispatched(
+            OrderChargebackReceived::class,
+            fn (OrderChargebackReceived $event): bool => $event->chargebackId === 'chargeback_evt_1'
+                && $event->orderId === 'order_abc123'
+                && $event->originalOrderId === 'order_abc123'
+                && $event->customerId === 'customer_abc'
+                && $event->status === 'pending'
+                && $event->reason === 'fraud',
+        );
+    }
+
+    public function test_it_dispatches_the_chargeback_reversed_event_from_webhook(): void
+    {
+        Event::fake([OrderChargebackReversed::class]);
+
+        User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        $this->fakeGetChargeback($this->buildApiChargeback([
+            'id' => 'chargeback_evt_2',
+            'customerId' => 'customer_abc',
+            'originalOrderId' => 'order_abc123',
+            'status' => 'won',
+            'reason' => 'fraud',
+            'totalValue' => '99.00',
+            'subtotalValue' => '81.82',
+            'currency' => 'EUR',
+            'taxRates' => [
+                ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
+            ],
+        ]));
+
+        $this->postWebhookEvent('order.chargeback_reversed', 'order_abc123', 'order', [
+            'id' => 'chargeback_evt_2',
+            'originalOrderId' => 'order_abc123',
+            'reason' => 'fraud',
+        ])->assertStatus(201);
+
+        Event::assertDispatched(
+            OrderChargebackReversed::class,
+            fn (OrderChargebackReversed $event): bool => $event->chargebackId === 'chargeback_evt_2'
+                && $event->orderId === 'order_abc123'
+                && $event->originalOrderId === 'order_abc123'
+                && $event->customerId === 'customer_abc'
+                && $event->status === 'won',
+        );
     }
 
     public function test_it_persists_a_chargeback_from_webhook(): void

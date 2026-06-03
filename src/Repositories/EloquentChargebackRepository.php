@@ -9,10 +9,13 @@ use Vatly\Fluent\Contracts\ChargebackRepositoryInterface;
 use Vatly\Fluent\Data\StoreChargebackData;
 use Vatly\Fluent\Data\UpdateChargebackData;
 use Vatly\Laravel\Models\Chargeback;
+use Vatly\Laravel\Repositories\Concerns\SerializesTaxSummary;
 use Vatly\Laravel\VatlyConfig;
 
 class EloquentChargebackRepository implements ChargebackRepositoryInterface
 {
+    use SerializesTaxSummary;
+
     public function __construct(
         private readonly VatlyConfig $config,
     ) {
@@ -49,7 +52,7 @@ class EloquentChargebackRepository implements ChargebackRepositoryInterface
             'status' => $data->status,
             'total' => $data->total,
             'subtotal' => $data->subtotal,
-            'tax_summary' => $data->taxSummary?->toArray(),
+            'tax_summary' => $this->serializeTaxSummary($data->taxSummary),
             'currency' => $data->currency,
             'reason' => $data->reason,
         ];
@@ -76,7 +79,7 @@ class EloquentChargebackRepository implements ChargebackRepositoryInterface
                 $chargeback->subtotal = $data->subtotal;
             }
             if ($data->taxSummary !== null) {
-                $chargeback->tax_summary = $data->taxSummary->toArray();
+                $chargeback->tax_summary = $this->serializeTaxSummary($data->taxSummary);
             }
             if ($data->currency !== null) {
                 $chargeback->currency = $data->currency;

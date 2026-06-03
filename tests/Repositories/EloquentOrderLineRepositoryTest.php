@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Vatly\Laravel\Tests\Repositories;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Vatly\Fluent\Data\OrderLineData;
+use Vatly\API\Data\OrderLineData;
 use Vatly\Laravel\Models\OrderLine;
 use Vatly\Laravel\Repositories\EloquentOrderLineRepository;
 use Vatly\Laravel\Tests\BaseTestCase;
