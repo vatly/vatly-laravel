@@ -79,9 +79,13 @@ Pin to an exact version during alpha — the API will change.
 ## Usage
 
 ```php
+// Vatly ids are prefixed — subscription plans are `subscription_plan_…`,
+// one-off products `one_off_product_…`. Find them in the Vatly dashboard
+// or via `GET /subscription-plans`.
+
 // Start a subscription checkout
 $checkout = $user->subscribe()
-    ->toPlan('plan_premium')
+    ->toPlan('subscription_plan_7Hd9Kf2Lm')
     ->create();
 
 return redirect($checkout->links->checkoutUrl->href);
@@ -89,19 +93,21 @@ return redirect($checkout->links->checkoutUrl->href);
 // Start it with a free trial — billing begins after the trial elapses.
 // Either set whole days…
 $user->subscribe()
-    ->toPlan('plan_premium')
+    ->toPlan('subscription_plan_7Hd9Kf2Lm')
     ->withTrialDays(14)
     ->create();
 
 // …or an end date (rounded up to whole days, so the trial never ends early):
 $user->subscribe()
-    ->toPlan('plan_premium')
+    ->toPlan('subscription_plan_7Hd9Kf2Lm')
     ->withTrialEndsAt(now()->addMonth())
     ->create();
 
 // One-off checkouts with explicit items
+// Each item id is a Vatly product: `one_off_product_…` for a one-off product
+// or `subscription_plan_…` for a subscription plan.
 $checkout = $user->checkout()->create(
-    items: [['id' => 'plan_premium', 'quantity' => 1]],
+    items: [['id' => 'one_off_product_3Qb8Wz1Yt', 'quantity' => 1]],
     redirectUrlSuccess: 'https://example.com/success',
     redirectUrlCanceled: 'https://example.com/canceled',
 );
@@ -109,7 +115,7 @@ $checkout = $user->checkout()->create(
 // Guest checkout: put {CHECKOUT_ID} in the return URL — Vatly fills it in,
 // and claimVatlyCustomerFromReturn() links the purchase on the way back.
 $user->checkout()->create(
-    items: [['id' => 'plan_premium', 'quantity' => 1]],
+    items: [['id' => 'one_off_product_3Qb8Wz1Yt', 'quantity' => 1]],
     redirectUrlSuccess: route('vatly.return').'?checkout_id={CHECKOUT_ID}',
     redirectUrlCanceled: 'https://example.com/billing',
 );
@@ -126,7 +132,7 @@ $user->subscription()->valid();
 $user->subscription()->ended();
 
 // Subscription operations
-$user->subscription()->swap('plan_premium');
+$user->subscription()->swap('subscription_plan_7Hd9Kf2Lm');
 $user->subscription()->cancel();                        // Vatly decides immediate vs grace
 $user->subscription()->resume();                        // while in grace period
 $user->subscription()->updateBilling();                 // signed link for hosted update flow
