@@ -197,13 +197,13 @@ composer test
 
 ### Faking Vatly in your app's tests
 
-For feature tests that drive checkout/subscription flows, call `VatlyHelpers::fake()` — it binds a `FakeVatly` into the container, so every `subscribe()` / `checkout()` / `subscription()` call routes through recording fakes instead of the real API. Script only what you care about and assert against the returned fake (in the spirit of `Notification::fake()`), no hand-rolled Mockery stubs:
+For feature tests that drive checkout/subscription flows, call `Vatly::fake()` — it binds a `FakeVatly` into the container, so every `subscribe()` / `checkout()` / `subscription()` call routes through recording fakes instead of the real API. Script only what you care about and assert against the returned fake (in the spirit of `Notification::fake()`), no hand-rolled Mockery stubs:
 
 ```php
 use Vatly\Fluent\Testing\FakeCheckout;
-use Vatly\Laravel\VatlyHelpers;
+use Vatly\Laravel\Facades\Vatly;
 
-$vatly = VatlyHelpers::fake();
+$vatly = Vatly::fake();
 
 // Optional: script the Checkout returned on subscription create
 $vatly->onSubscriptionCreate(
@@ -219,6 +219,8 @@ $vatly->assertNothingCanceled();
 ```
 
 Available assertions: `assertSubscriptionCreated`, `assertCheckoutCreated`, `assertSubscriptionSwapped`, `assertSubscriptionCanceled`, `assertNothingCanceled`, `assertNothingCreated`.
+
+`Vatly::fake()` is the `Vatly\Laravel\Facades\Vatly` facade; it delegates to `VatlyHelpers::fake()`, so the two are interchangeable (use the static helper directly if you'd rather not register the facade). The same facade also proxies the composition root — `Vatly::order($order)`, `Vatly::subscription($subscription)`, etc.
 
 ### Faking the webhook API fetch
 

@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vatly\Fluent\Testing\FakeVatly;
 use Vatly\Fluent\Vatly;
+use Vatly\Laravel\Facades\Vatly as VatlyFacade;
 use Vatly\Laravel\Tests\BaseTestCase;
 use Vatly\Laravel\VatlyHelpers;
 
@@ -43,5 +44,31 @@ class VatlyFakeTest extends BaseTestCase
         $vatly = VatlyHelpers::fake();
 
         $vatly->assertNothingCreated();
+    }
+
+    public function test_facade_fake_binds_and_points_at_the_composition_root(): void
+    {
+        $vatly = VatlyFacade::fake();
+
+        $this->assertInstanceOf(FakeVatly::class, $vatly);
+        // The brand-named helper delegates to VatlyHelpers::fake()…
+        $this->assertSame($vatly, app(Vatly::class));
+        // …and the facade itself proxies the same composition root.
+        $this->assertSame($vatly, VatlyFacade::getFacadeRoot());
+    }
+
+    public function test_facade_fake_records_checkouts_created_through_billable(): void
+    {
+        $vatly = VatlyFacade::fake();
+        $user = User::factory()->create(['vatly_id' => 'customer_facade']);
+
+        $user->checkout()->create(
+            items: [['id' => 'plan_pro', 'quantity' => 1]],
+            redirectUrlSuccess: 'https://example.com/success',
+            redirectUrlCanceled: 'https://example.com/canceled',
+        );
+
+        $vatly->assertCheckoutCreated('plan_pro');
+        $vatly->assertNothingCanceled();
     }
 }
