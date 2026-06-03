@@ -9,10 +9,13 @@ use Vatly\Fluent\Contracts\RefundRepositoryInterface;
 use Vatly\Fluent\Data\StoreRefundData;
 use Vatly\Fluent\Data\UpdateRefundData;
 use Vatly\Laravel\Models\Refund;
+use Vatly\Laravel\Repositories\Concerns\SerializesTaxSummary;
 use Vatly\Laravel\VatlyConfig;
 
 class EloquentRefundRepository implements RefundRepositoryInterface
 {
+    use SerializesTaxSummary;
+
     public function __construct(
         private readonly VatlyConfig $config,
     ) {
@@ -49,7 +52,7 @@ class EloquentRefundRepository implements RefundRepositoryInterface
             'status' => $data->status,
             'total' => $data->total,
             'subtotal' => $data->subtotal,
-            'tax_summary' => $data->taxSummary?->toArray(),
+            'tax_summary' => $this->serializeTaxSummary($data->taxSummary),
             'currency' => $data->currency,
         ];
 
@@ -75,7 +78,7 @@ class EloquentRefundRepository implements RefundRepositoryInterface
                 $refund->subtotal = $data->subtotal;
             }
             if ($data->taxSummary !== null) {
-                $refund->tax_summary = $data->taxSummary->toArray();
+                $refund->tax_summary = $this->serializeTaxSummary($data->taxSummary);
             }
             if ($data->currency !== null) {
                 $refund->currency = $data->currency;

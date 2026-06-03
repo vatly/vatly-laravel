@@ -23,7 +23,7 @@ use Vatly\Fluent\Contracts\OrderLineInterface;
  * @property int $base_price Per-unit base price (before quantity), in integer cents.
  * @property int $total Gross line total (including tax), in integer cents.
  * @property int $subtotal Net line subtotal (net of tax), in integer cents.
- * @property array<int, array{rate: array{name: string, percentage: float, taxablePercentage: float}, amount: int, currency: string}>|null $tax_summary
+ * @property array<int, array{taxRate: array{name: string, percentage: float, taxablePercentage: float}, amount: int, currency: string}>|null $tax_summary
  * @property string|null $product_type
  * @property string|null $product_id
  *

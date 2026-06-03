@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Repositories;
 
+use Vatly\API\Data\OrderLineData;
 use Vatly\Fluent\Contracts\OrderLineInterface;
 use Vatly\Fluent\Contracts\OrderLineRepositoryInterface;
-use Vatly\Fluent\Data\OrderLineData;
 use Vatly\Laravel\Models\OrderLine;
+use Vatly\Laravel\Repositories\Concerns\SerializesTaxSummary;
 
 class EloquentOrderLineRepository implements OrderLineRepositoryInterface
 {
+    use SerializesTaxSummary;
+
     /**
      * @return OrderLineInterface[]
      */
@@ -40,7 +43,7 @@ class EloquentOrderLineRepository implements OrderLineRepositoryInterface
             'base_price' => $data->basePrice,
             'total' => $data->total,
             'subtotal' => $data->subtotal,
-            'tax_summary' => $data->taxSummary?->toArray(),
+            'tax_summary' => $this->serializeTaxSummary($data->taxSummary),
             'product_type' => $data->productType,
             'product_id' => $data->productId,
         ]);

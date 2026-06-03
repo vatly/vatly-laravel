@@ -19,7 +19,7 @@ use Vatly\Fluent\Vatly;
  * @property string $status
  * @property int $total
  * @property int|null $subtotal
- * @property array<int, array{rate: array{name: string, percentage: float, taxablePercentage: float}, amount: int, currency: string}>|null $tax_summary
+ * @property array<int, array{taxRate: array{name: string, percentage: float, taxablePercentage: float}, amount: int, currency: string}>|null $tax_summary
  * @property string $currency
  * @property string|null $invoice_number
  * @property string|null $payment_method

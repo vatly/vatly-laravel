@@ -10,10 +10,13 @@ use Vatly\Fluent\Contracts\OrderRepositoryInterface;
 use Vatly\Fluent\Data\StoreOrderData;
 use Vatly\Fluent\Data\UpdateOrderData;
 use Vatly\Laravel\Models\Order;
+use Vatly\Laravel\Repositories\Concerns\SerializesTaxSummary;
 use Vatly\Laravel\VatlyConfig;
 
 class EloquentOrderRepository implements OrderRepositoryInterface
 {
+    use SerializesTaxSummary;
+
     public function __construct(
         private readonly VatlyConfig $config,
         private readonly OrderLineRepositoryInterface $orderLines,
@@ -34,7 +37,7 @@ class EloquentOrderRepository implements OrderRepositoryInterface
             'status' => $data->status,
             'total' => $data->total,
             'subtotal' => $data->subtotal,
-            'tax_summary' => $data->taxSummary?->toArray(),
+            'tax_summary' => $this->serializeTaxSummary($data->taxSummary),
             'currency' => $data->currency,
             'invoice_number' => $data->invoiceNumber,
             'payment_method' => $data->paymentMethod,
@@ -70,7 +73,7 @@ class EloquentOrderRepository implements OrderRepositoryInterface
                 $order->subtotal = $data->subtotal;
             }
             if ($data->taxSummary !== null) {
-                $order->tax_summary = $data->taxSummary->toArray();
+                $order->tax_summary = $this->serializeTaxSummary($data->taxSummary);
             }
             if ($data->currency !== null) {
                 $order->currency = $data->currency;
