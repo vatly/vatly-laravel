@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Vatly\Laravel\Repositories;
 
 use Vatly\Fluent\Contracts\OrderInterface;
+use Vatly\Fluent\Contracts\OrderLineRepositoryInterface;
 use Vatly\Fluent\Contracts\OrderRepositoryInterface;
 use Vatly\Fluent\Data\StoreOrderData;
 use Vatly\Fluent\Data\UpdateOrderData;
@@ -15,6 +16,7 @@ class EloquentOrderRepository implements OrderRepositoryInterface
 {
     public function __construct(
         private readonly VatlyConfig $config,
+        private readonly OrderLineRepositoryInterface $orderLines,
     ) {
         //
     }
@@ -44,7 +46,15 @@ class EloquentOrderRepository implements OrderRepositoryInterface
             $attrs['owner_id'] = $data->hostCustomerId;
         }
 
-        return Order::create($attrs);
+        $order = Order::create($attrs);
+
+        // Lines are immutable once paid, so they're only written here on the
+        // initial store — the update path leaves existing lines as-is.
+        foreach ($data->lines as $line) {
+            $this->orderLines->store($line, $data->vatlyId);
+        }
+
+        return $order;
     }
 
     public function update(OrderInterface $order, UpdateOrderData $data): OrderInterface

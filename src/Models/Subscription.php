@@ -7,6 +7,7 @@ namespace Vatly\Laravel\Models;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Vatly\Fluent\Concerns\DerivesSubscriptionState;
 use Vatly\Fluent\Contracts\SubscriptionInterface;
@@ -60,6 +61,33 @@ class Subscription extends Model implements SubscriptionInterface
     public function owner(): MorphTo
     {
         return $this->morphTo('owner');
+    }
+
+    /**
+     * The renewal (and initial) orders this subscription generated.
+     *
+     * The subscription↔orders link lives at the order-line level, as a generic
+     * (`product_type`, `product_id`) pair: an order belongs to this subscription
+     * when it carries a line where `product_type = 'subscription'` and
+     * `product_id` is this subscription's Vatly id. We model that as a
+     * many-to-many through the `vatly_order_lines` table — the line row acts as
+     * the pivot, joining the subscription's `vatly_id` to the order's `vatly_id`
+     * — so `$subscription->orders` resolves a real Eloquent relation (eager
+     * loadable, queryable) rather than an ad-hoc query. The `(product_type,
+     * product_id)` index backs the pivot lookup.
+     *
+     * @return BelongsToMany<Order, $this>
+     */
+    public function orders(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Order::class,
+            'vatly_order_lines',
+            'product_id',
+            'order_vatly_id',
+            'vatly_id',
+            'vatly_id',
+        )->wherePivot('product_type', 'subscription');
     }
 
     // --- SubscriptionInterface state accessors ---

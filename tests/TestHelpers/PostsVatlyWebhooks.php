@@ -287,6 +287,7 @@ trait PostsVatlyWebhooks
      *   invoiceNumber: ?string,
      *   paymentMethod: ?string,
      *   taxRates: array<int, array{name: string, percentage: float, taxablePercentage: float, amount: string}>,
+     *   lines?: array<int, array{id: string, description: string, quantity: int, basePriceValue: string, totalValue: string, subtotalValue: string, productType?: ?string, productId?: ?string}>,
      * }  $data
      */
     protected function buildApiOrder(array $data): ApiOrder
@@ -299,6 +300,23 @@ trait PostsVatlyWebhooks
         $order->invoiceNumber = $data['invoiceNumber'];
         $order->paymentMethod = $data['paymentMethod'];
         $order->status = 'paid';
+        // The enriched API order carries its lines; default to none so callers
+        // that don't exercise line persistence stay unaffected.
+        $order->lines = array_map(
+            fn (array $line) => (object) [
+                'id' => $line['id'],
+                'resource' => 'order_line',
+                'description' => $line['description'],
+                'quantity' => $line['quantity'],
+                'basePrice' => ['currency' => $data['currency'], 'value' => $line['basePriceValue']],
+                'total' => ['currency' => $data['currency'], 'value' => $line['totalValue']],
+                'subtotal' => ['currency' => $data['currency'], 'value' => $line['subtotalValue']],
+                'taxes' => [],
+                'productType' => $line['productType'] ?? null,
+                'productId' => $line['productId'] ?? null,
+            ],
+            $data['lines'] ?? [],
+        );
         $order->taxSummary = new TaxSummaryCollection(array_map(
             fn (array $rate) => [
                 'taxRate' => [

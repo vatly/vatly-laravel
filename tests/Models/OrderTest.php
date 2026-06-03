@@ -12,11 +12,15 @@ use Vatly\API\Types\Money as ApiMoney;
 use Vatly\API\VatlyApiClient;
 use Vatly\Fluent\Actions\GetOrder;
 use Vatly\Fluent\Contracts\OrderInterface;
+use Vatly\Fluent\Data\OrderLineData;
+use Vatly\Fluent\Data\StoreOrderData;
 use Vatly\Fluent\OrderHandle;
 use Vatly\Fluent\Vatly;
 use Vatly\Laravel\Models\Chargeback;
 use Vatly\Laravel\Models\Order;
+use Vatly\Laravel\Models\OrderLine;
 use Vatly\Laravel\Models\Refund;
+use Vatly\Laravel\Repositories\EloquentOrderRepository;
 use Vatly\Laravel\Tests\BaseTestCase;
 
 class OrderTest extends BaseTestCase
@@ -174,6 +178,77 @@ class OrderTest extends BaseTestCase
 
         $this->assertCount(1, $order->chargebacks);
         $this->assertSame('chargeback_1', $order->chargebacks->first()->getVatlyId());
+    }
+
+    public function test_it_exposes_lines_linked_on_the_vatly_order_id(): void
+    {
+        Order::create([
+            'vatly_id' => 'ord_lines_1',
+            'status' => 'paid',
+            'total' => 9900,
+            'currency' => 'EUR',
+        ]);
+
+        OrderLine::create([
+            'vatly_id' => 'order_item_1',
+            'order_vatly_id' => 'ord_lines_1',
+            'description' => 'Pro plan',
+            'quantity' => 1,
+            'base_price' => 9900,
+            'total' => 9900,
+            'subtotal' => 8182,
+        ]);
+        // A line on a different order must not leak in.
+        OrderLine::create([
+            'vatly_id' => 'order_item_other',
+            'order_vatly_id' => 'ord_other',
+            'description' => 'Other',
+            'quantity' => 1,
+            'base_price' => 100,
+            'total' => 100,
+            'subtotal' => 100,
+        ]);
+
+        $order = Order::where('vatly_id', 'ord_lines_1')->firstOrFail();
+
+        $this->assertCount(1, $order->lines);
+        $this->assertSame('order_item_1', $order->lines->first()->getVatlyId());
+    }
+
+    public function test_storing_an_order_with_lines_persists_the_lines(): void
+    {
+        /** @var EloquentOrderRepository $repo */
+        $repo = $this->app->make(EloquentOrderRepository::class);
+
+        $repo->store(new StoreOrderData(
+            vatlyId: 'ord_store_lines',
+            customerId: 'cus_1',
+            status: 'paid',
+            total: 9900,
+            currency: 'EUR',
+            lines: [
+                new OrderLineData(
+                    vatlyId: 'order_item_x',
+                    description: 'Pro plan — monthly',
+                    quantity: 1,
+                    basePrice: 9900,
+                    total: 9900,
+                    subtotal: 8182,
+                    productType: 'subscription',
+                    productId: 'subscription_42',
+                ),
+            ],
+        ));
+
+        $this->assertDatabaseHas('vatly_order_lines', [
+            'vatly_id' => 'order_item_x',
+            'order_vatly_id' => 'ord_store_lines',
+            'product_type' => 'subscription',
+            'product_id' => 'subscription_42',
+        ]);
+
+        $order = Order::where('vatly_id', 'ord_store_lines')->firstOrFail();
+        $this->assertCount(1, $order->lines);
     }
 
     public function test_reversal_helpers_surface_a_partial_reversal_from_the_api_order(): void
