@@ -7,10 +7,9 @@ namespace Vatly\Laravel\Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vatly\Fluent\Testing\FakeVatly;
-use Vatly\Fluent\Vatly;
-use Vatly\Laravel\Facades\Vatly as VatlyFacade;
+use Vatly\Fluent\Vatly as FluentVatly;
+use Vatly\Laravel\Facades\Vatly;
 use Vatly\Laravel\Tests\BaseTestCase;
-use Vatly\Laravel\VatlyHelpers;
 
 class VatlyFakeTest extends BaseTestCase
 {
@@ -18,15 +17,18 @@ class VatlyFakeTest extends BaseTestCase
 
     public function test_fake_binds_a_fake_vatly_into_the_container(): void
     {
-        $vatly = VatlyHelpers::fake();
+        $vatly = Vatly::fake();
 
         $this->assertInstanceOf(FakeVatly::class, $vatly);
-        $this->assertSame($vatly, app(Vatly::class));
+        // The fake replaces the composition root the package resolves…
+        $this->assertSame($vatly, app(FluentVatly::class));
+        // …and the one the facade proxies.
+        $this->assertSame($vatly, Vatly::getFacadeRoot());
     }
 
     public function test_fake_records_checkouts_created_through_billable(): void
     {
-        $vatly = VatlyHelpers::fake();
+        $vatly = Vatly::fake();
         $user = User::factory()->create(['vatly_id' => 'customer_x']);
 
         $user->checkout()->create(
@@ -41,34 +43,8 @@ class VatlyFakeTest extends BaseTestCase
 
     public function test_fake_asserts_nothing_created_when_idle(): void
     {
-        $vatly = VatlyHelpers::fake();
+        $vatly = Vatly::fake();
 
         $vatly->assertNothingCreated();
-    }
-
-    public function test_facade_fake_binds_and_points_at_the_composition_root(): void
-    {
-        $vatly = VatlyFacade::fake();
-
-        $this->assertInstanceOf(FakeVatly::class, $vatly);
-        // The brand-named helper delegates to VatlyHelpers::fake()…
-        $this->assertSame($vatly, app(Vatly::class));
-        // …and the facade itself proxies the same composition root.
-        $this->assertSame($vatly, VatlyFacade::getFacadeRoot());
-    }
-
-    public function test_facade_fake_records_checkouts_created_through_billable(): void
-    {
-        $vatly = VatlyFacade::fake();
-        $user = User::factory()->create(['vatly_id' => 'customer_facade']);
-
-        $user->checkout()->create(
-            items: [['id' => 'plan_pro', 'quantity' => 1]],
-            redirectUrlSuccess: 'https://example.com/success',
-            redirectUrlCanceled: 'https://example.com/canceled',
-        );
-
-        $vatly->assertCheckoutCreated('plan_pro');
-        $vatly->assertNothingCanceled();
     }
 }

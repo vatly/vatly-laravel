@@ -4,17 +4,25 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Facades;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Facade;
 use Vatly\Fluent\Testing\FakeVatly;
 use Vatly\Fluent\Vatly as FluentVatly;
-use Vatly\Laravel\VatlyHelpers;
+use Vatly\Laravel\Models\VatlyWebhookCall;
+use Vatly\Laravel\VatlyConfig;
 
 /**
  * Facade over the Vatly composition root ({@see FluentVatly}).
  *
- * Lets application code reach the framework-agnostic API through the brand
- * name — `Vatly::order($order)`, `Vatly::subscription($subscription)`, … —
- * and adds the Cashier-style {@see self::fake()} test helper.
+ * The single brand-named entry point for the package's static surface:
+ *
+ * - reaches the framework-agnostic API — `Vatly::order($order)`,
+ *   `Vatly::subscription($subscription)`, … — by proxying the resolved
+ *   `Vatly\Fluent\Vatly` instance;
+ * - adds the Cashier-style host-side helpers: {@see self::fake()},
+ *   {@see self::findBillable()}, {@see self::findBillableOrFail()} and
+ *   {@see self::cleanUp()}.
  *
  * Lives in the `Facades` namespace (rather than a `Vatly\Laravel\Vatly`
  * class) so it never clashes with the underlying `Vatly\Fluent\Vatly` that
@@ -36,12 +44,12 @@ class Vatly extends Facade
     /**
      * Swap the Vatly composition root for a {@see FakeVatly} and bind it into
      * the container — the Cashier-style one-liner (`Vatly::fake()`) for feature
-     * tests. Delegates to {@see VatlyHelpers::fake()}.
+     * tests.
      *
      * Every `subscribe()` / `checkout()` / `subscription()` call made through
      * the `Billable` trait — and every `Vatly::…` facade call — then routes
      * through recording fakes instead of the real API, so a test scripts only
-     * what it cares about and asserts against the returned fake.
+     * what it cares about and asserts against the returned fake:
      *
      * ```php
      * $vatly = Vatly::fake();
@@ -53,13 +61,47 @@ class Vatly extends Facade
      */
     public static function fake(): FakeVatly
     {
-        $fake = VatlyHelpers::fake();
+        $fake = new FakeVatly;
+
+        app()->instance(FluentVatly::class, $fake);
 
         // Drop any instance this facade already resolved so subsequent
         // `Vatly::…` calls proxy through the freshly-bound fake.
         static::clearResolvedInstance(static::getFacadeAccessor());
 
         return $fake;
+    }
+
+    /**
+     * Get the billable instance by its Vatly customer ID, or null when no row
+     * matches. Resolves the configured billable model, so callers don't need to
+     * name it.
+     */
+    public static function findBillable(string $vatlyCustomerId): ?Model
+    {
+        $billableModel = app()->make(VatlyConfig::class)->getBillableModel();
+
+        return $billableModel::where('vatly_id', $vatlyCustomerId)->first();
+    }
+
+    /**
+     * Get the billable instance by its Vatly customer ID.
+     *
+     * @throws ModelNotFoundException when no row matches.
+     */
+    public static function findBillableOrFail(string $vatlyCustomerId): Model
+    {
+        $billableModel = app()->make(VatlyConfig::class)->getBillableModel();
+
+        return $billableModel::where('vatly_id', $vatlyCustomerId)->firstOrFail();
+    }
+
+    /**
+     * Prune stored webhook-call rows past their retention window.
+     */
+    public static function cleanUp(): void
+    {
+        VatlyWebhookCall::cleanUp();
     }
 
     protected static function getFacadeAccessor(): string

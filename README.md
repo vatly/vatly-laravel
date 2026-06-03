@@ -220,7 +220,7 @@ $vatly->assertNothingCanceled();
 
 Available assertions: `assertSubscriptionCreated`, `assertCheckoutCreated`, `assertSubscriptionSwapped`, `assertSubscriptionCanceled`, `assertNothingCanceled`, `assertNothingCreated`.
 
-`Vatly::fake()` is the `Vatly\Laravel\Facades\Vatly` facade; it delegates to `VatlyHelpers::fake()`, so the two are interchangeable (use the static helper directly if you'd rather not register the facade). The same facade also proxies the composition root — `Vatly::order($order)`, `Vatly::subscription($subscription)`, etc.
+`Vatly::fake()` lives on the `Vatly\Laravel\Facades\Vatly` facade — the package's single static-helper surface. The same facade proxies the composition root (`Vatly::order($order)`, `Vatly::subscription($subscription)`, …) and exposes the host-side helpers `Vatly::findBillable($vatlyCustomerId)`, `Vatly::findBillableOrFail($vatlyCustomerId)`, and `Vatly::cleanUp()`.
 
 ### Faking the webhook API fetch
 

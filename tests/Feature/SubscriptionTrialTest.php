@@ -10,8 +10,8 @@ use Illuminate\Support\Carbon;
 use Vatly\API\Resources\Checkout;
 use Vatly\Fluent\Testing\FakeCheckout;
 use Vatly\Fluent\Testing\FakeVatly;
+use Vatly\Laravel\Facades\Vatly;
 use Vatly\Laravel\Tests\BaseTestCase;
-use Vatly\Laravel\VatlyHelpers;
 
 class SubscriptionTrialTest extends BaseTestCase
 {
@@ -26,7 +26,7 @@ class SubscriptionTrialTest extends BaseTestCase
     {
         parent::setUp();
 
-        $this->vatly = VatlyHelpers::fake();
+        $this->vatly = Vatly::fake();
         $this->vatly->onSubscriptionCreate(function (string $planId, array $payload): Checkout {
             $this->capturedPayload = $payload;
 
