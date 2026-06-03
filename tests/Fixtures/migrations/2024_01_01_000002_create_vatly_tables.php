@@ -39,6 +39,24 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('vatly_order_lines', function (Blueprint $table) {
+            $table->id();
+            $table->string('order_vatly_id');
+            $table->string('vatly_id')->unique();
+            $table->string('description');
+            $table->integer('quantity');
+            $table->integer('base_price');
+            $table->integer('total');
+            $table->integer('subtotal');
+            $table->json('tax_summary')->nullable();
+            $table->string('product_type')->nullable();
+            $table->string('product_id')->nullable();
+            $table->timestamps();
+
+            $table->index('order_vatly_id');
+            $table->index(['product_type', 'product_id']);
+        });
+
         Schema::create('vatly_refunds', function (Blueprint $table) {
             $table->id();
             $table->nullableMorphs('owner');

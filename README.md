@@ -63,7 +63,7 @@ Pin to an exact version during alpha — the API will change.
    php artisan migrate
    ```
 
-   This adds a `vatly_id` column to your users table plus `vatly_subscriptions`, `vatly_orders`, `vatly_refunds`, `vatly_chargebacks`, and `vatly_webhook_calls` tables.
+   This adds a `vatly_id` column to your users table plus `vatly_subscriptions`, `vatly_orders`, `vatly_order_lines`, `vatly_refunds`, `vatly_chargebacks`, and `vatly_webhook_calls` tables.
 
 4. **Add the `Billable` trait to your User model:**
 
@@ -138,6 +138,10 @@ foreach ($user->orders as $order) {
 
 // Or explicit lookup
 $invoiceUrl = $user->order('order_abc')->invoiceUrl();
+
+// Order lines & a subscription's renewal orders
+$order->lines;                                          // line items recorded for this order
+$subscription->orders;                                  // initial + renewal orders this subscription generated
 
 // Refunds & chargebacks — owned-by-customer and per-order relations
 $user->refunds;                                         // all refunds for this customer

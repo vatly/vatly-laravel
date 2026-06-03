@@ -77,6 +77,19 @@ class Order extends Model implements OrderInterface
             ->orderByDesc('created_at');
     }
 
+    /**
+     * The order's lines, recorded locally from the `order.paid` webhook.
+     *
+     * Linked on the Vatly order id (`order_vatly_id` → `vatly_id`) rather than
+     * the local primary key, mirroring {@see self::refunds()}.
+     *
+     * @return HasMany<OrderLine, $this>
+     */
+    public function lines(): HasMany
+    {
+        return $this->hasMany(OrderLine::class, 'order_vatly_id', 'vatly_id');
+    }
+
     // OrderInterface implementation
 
     public function getVatlyId(): string

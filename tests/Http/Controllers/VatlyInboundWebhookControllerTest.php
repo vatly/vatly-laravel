@@ -207,6 +207,55 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         $this->assertSame($user->id, $order->owner_id);
     }
 
+    public function test_it_persists_order_lines_when_creating_an_order_from_webhook(): void
+    {
+        User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        $this->fakeGetOrder($this->buildApiOrder([
+            'id' => 'order_lines_wh',
+            'customerId' => 'customer_abc',
+            'totalValue' => '99.00',
+            'subtotalValue' => '81.82',
+            'currency' => 'EUR',
+            'invoiceNumber' => 'INV-010',
+            'paymentMethod' => 'card',
+            'taxRates' => [
+                ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
+            ],
+            'lines' => [
+                [
+                    'id' => 'order_item_wh_1',
+                    'description' => 'Pro plan — monthly',
+                    'quantity' => 1,
+                    'basePriceValue' => '99.00',
+                    'totalValue' => '99.00',
+                    'subtotalValue' => '81.82',
+                    'productType' => 'subscription',
+                    'productId' => 'subscription_wh',
+                ],
+            ],
+        ]));
+
+        $response = $this->postWebhookEvent('order.paid', 'order_lines_wh', 'order', [
+            'customerId' => 'customer_abc',
+            'total' => ['currency' => 'EUR', 'value' => '99.00'],
+            'invoiceNumber' => 'INV-010',
+            'paymentMethod' => 'card',
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('vatly_order_lines', [
+            'vatly_id' => 'order_item_wh_1',
+            'order_vatly_id' => 'order_lines_wh',
+            'quantity' => 1,
+            'base_price' => 9900,
+            'total' => 9900,
+            'subtotal' => 8182,
+            'product_type' => 'subscription',
+            'product_id' => 'subscription_wh',
+        ]);
+    }
+
     public function test_it_stores_an_order_when_a_payment_fails_from_webhook(): void
     {
         $user = User::factory()->create(['vatly_id' => 'customer_abc']);

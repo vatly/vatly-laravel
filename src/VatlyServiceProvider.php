@@ -9,6 +9,7 @@ use Vatly\Fluent\Contracts\ChargebackRepositoryInterface;
 use Vatly\Fluent\Contracts\ConfigurationInterface;
 use Vatly\Fluent\Contracts\CustomerBindingRepository;
 use Vatly\Fluent\Contracts\EventDispatcherInterface;
+use Vatly\Fluent\Contracts\OrderLineRepositoryInterface;
 use Vatly\Fluent\Contracts\OrderRepositoryInterface;
 use Vatly\Fluent\Contracts\RefundRepositoryInterface;
 use Vatly\Fluent\Contracts\SubscriptionRepositoryInterface;
@@ -19,6 +20,7 @@ use Vatly\Fluent\Wiring;
 use Vatly\Laravel\Events\LaravelEventDispatcher;
 use Vatly\Laravel\Repositories\EloquentChargebackRepository;
 use Vatly\Laravel\Repositories\EloquentCustomerBindingRepository;
+use Vatly\Laravel\Repositories\EloquentOrderLineRepository;
 use Vatly\Laravel\Repositories\EloquentOrderRepository;
 use Vatly\Laravel\Repositories\EloquentRefundRepository;
 use Vatly\Laravel\Repositories\EloquentSubscriptionRepository;
@@ -35,6 +37,7 @@ class VatlyServiceProvider extends ServiceProvider
         $this->app->bind(ConfigurationInterface::class, VatlyConfig::class);
         $this->app->bind(SubscriptionRepositoryInterface::class, EloquentSubscriptionRepository::class);
         $this->app->bind(OrderRepositoryInterface::class, EloquentOrderRepository::class);
+        $this->app->bind(OrderLineRepositoryInterface::class, EloquentOrderLineRepository::class);
         $this->app->bind(RefundRepositoryInterface::class, EloquentRefundRepository::class);
         $this->app->bind(ChargebackRepositoryInterface::class, EloquentChargebackRepository::class);
         $this->app->bind(WebhookCallRepositoryInterface::class, EloquentWebhookCallRepository::class);
@@ -46,6 +49,7 @@ class VatlyServiceProvider extends ServiceProvider
             config: $app->make(ConfigurationInterface::class),
             subscriptions: $app->make(SubscriptionRepositoryInterface::class),
             orders: $app->make(OrderRepositoryInterface::class),
+            orderLines: $app->make(OrderLineRepositoryInterface::class),
             refunds: $app->make(RefundRepositoryInterface::class),
             chargebacks: $app->make(ChargebackRepositoryInterface::class),
             webhookCalls: $app->make(WebhookCallRepositoryInterface::class),
@@ -85,6 +89,7 @@ class VatlyServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations/create_vatly_subscriptions_table.php.stub' => $this->getMigrationFileName('create_vatly_subscriptions_table.php'),
             __DIR__.'/../database/migrations/create_vatly_webhook_calls_table.php.stub' => $this->getMigrationFileName('create_vatly_webhook_calls_table.php'),
             __DIR__.'/../database/migrations/create_vatly_orders_table.php.stub' => $this->getMigrationFileName('create_vatly_orders_table.php'),
+            __DIR__.'/../database/migrations/create_vatly_order_lines_table.php.stub' => $this->getMigrationFileName('create_vatly_order_lines_table.php'),
             __DIR__.'/../database/migrations/create_vatly_refunds_table.php.stub' => $this->getMigrationFileName('create_vatly_refunds_table.php'),
             __DIR__.'/../database/migrations/create_vatly_chargebacks_table.php.stub' => $this->getMigrationFileName('create_vatly_chargebacks_table.php'),
         ], 'vatly-migrations');
