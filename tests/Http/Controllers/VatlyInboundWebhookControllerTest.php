@@ -14,11 +14,13 @@ use Vatly\API\Webhooks\Events\CheckoutFailed;
 use Vatly\API\Webhooks\Events\CheckoutPaid;
 use Vatly\API\Webhooks\Events\OrderChargebackReceived;
 use Vatly\API\Webhooks\Events\OrderChargebackReversed;
-use Vatly\API\Webhooks\Events\PaymentFailed;
+use Vatly\API\Webhooks\Events\OrderPaymentFailed;
 use Vatly\API\Webhooks\Events\RefundCanceled;
 use Vatly\API\Webhooks\Events\RefundCompleted;
 use Vatly\API\Webhooks\Events\RefundFailed;
 use Vatly\API\Webhooks\Events\SubscriptionCancellationGracePeriodCompleted;
+use Vatly\API\Webhooks\Events\WebhookSetupReceived;
+use Vatly\Fluent\Events\OrderWasCreatedFromWebhook;
 use Vatly\Laravel\Models\Chargeback;
 use Vatly\Laravel\Models\Order;
 use Vatly\Laravel\Models\Refund;
@@ -285,7 +287,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         $apiOrder->status = 'pending';
         $this->fakeGetOrder($apiOrder);
 
-        $response = $this->postWebhookEvent('payment.failed', 'order_failed_1', 'order', [
+        $response = $this->postWebhookEvent('order.payment_failed', 'order_failed_1', 'order', [
             'customerId' => 'customer_abc',
             'total' => ['currency' => 'EUR', 'value' => '99.00'],
             'invoiceNumber' => 'INV-009',
@@ -304,7 +306,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
 
     public function test_it_dispatches_the_payment_failed_event_from_webhook(): void
     {
-        Event::fake([PaymentFailed::class]);
+        Event::fake([OrderPaymentFailed::class]);
 
         User::factory()->create(['vatly_id' => 'customer_abc']);
 
@@ -323,15 +325,67 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         $apiOrder->status = 'pending';
         $this->fakeGetOrder($apiOrder);
 
-        $this->postWebhookEvent('payment.failed', 'order_failed_2', 'order', [
+        $this->postWebhookEvent('order.payment_failed', 'order_failed_2', 'order', [
             'customerId' => 'customer_abc',
             'total' => ['currency' => 'EUR', 'value' => '99.00'],
         ])->assertStatus(201);
 
         Event::assertDispatched(
-            PaymentFailed::class,
-            fn (PaymentFailed $event): bool => $event->orderId === 'order_failed_2'
+            OrderPaymentFailed::class,
+            fn (OrderPaymentFailed $event): bool => $event->orderId === 'order_failed_2'
                 && $event->customerId === 'customer_abc',
+        );
+    }
+
+    public function test_it_dispatches_the_order_was_created_from_webhook_event(): void
+    {
+        // The order analogue of SubscriptionWasCreatedFromWebhook: a driver-side
+        // signal that fires once, from the order-sync reaction, when a brand-new
+        // local Order row is created from an order.paid webhook.
+        Event::fake([OrderWasCreatedFromWebhook::class]);
+
+        User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        $this->fakeGetOrder($this->buildApiOrder([
+            'id' => 'order_created_evt',
+            'customerId' => 'customer_abc',
+            'totalValue' => '99.00',
+            'subtotalValue' => '81.82',
+            'currency' => 'EUR',
+            'invoiceNumber' => 'INV-100',
+            'paymentMethod' => 'card',
+            'taxRates' => [
+                ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
+            ],
+        ]));
+
+        $this->postWebhookEvent('order.paid', 'order_created_evt', 'order', [
+            'customerId' => 'customer_abc',
+            'total' => ['currency' => 'EUR', 'value' => '99.00'],
+            'invoiceNumber' => 'INV-100',
+            'paymentMethod' => 'card',
+        ])->assertStatus(201);
+
+        Event::assertDispatched(
+            OrderWasCreatedFromWebhook::class,
+            fn (OrderWasCreatedFromWebhook $event): bool => $event->order->getVatlyId() === 'order_created_evt',
+        );
+    }
+
+    public function test_it_dispatches_the_webhook_setup_received_event(): void
+    {
+        Event::fake([WebhookSetupReceived::class]);
+
+        $this->postWebhookEvent('webhook.setup', 'webhook_endpoint_1', 'webhook', [
+            'url' => 'https://example.test/webhooks/vatly',
+        ])->assertStatus(201);
+
+        $this->assertDatabaseCount('vatly_webhook_calls', 1);
+
+        Event::assertDispatched(
+            WebhookSetupReceived::class,
+            fn (WebhookSetupReceived $event): bool => $event->entityType === 'webhook'
+                && $event->eventName === 'webhook.setup',
         );
     }
 
