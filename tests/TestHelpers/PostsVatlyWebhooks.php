@@ -12,27 +12,28 @@ use Vatly\API\Resources\Chargeback as ApiChargeback;
 use Vatly\API\Resources\Checkout as ApiCheckout;
 use Vatly\API\Resources\Order as ApiOrder;
 use Vatly\API\Resources\Refund as ApiRefund;
+use Vatly\API\Resources\ResourceFactory;
 use Vatly\API\Resources\Subscription as ApiSubscription;
 use Vatly\API\Types\Mandate;
 use Vatly\API\Types\Money;
 use Vatly\API\Types\TaxSummaryCollection;
 use Vatly\API\VatlyApiClient;
-use Vatly\Fluent\Actions\GetChargeback;
 use Vatly\Fluent\Actions\GetCheckout;
-use Vatly\Fluent\Actions\GetOrder;
-use Vatly\Fluent\Actions\GetRefund;
-use Vatly\Fluent\Actions\GetSubscription;
 use Vatly\Fluent\Vatly;
 use Vatly\Fluent\Webhooks\WebhookProcessor;
 
 /**
  * Test helper for driving the Vatly webhook controller end-to-end.
  *
- * Builds + signs the JSON payload Vatly would POST, swaps the cached
- * `GetOrder` action on the composition root so order.paid handling
- * doesn't need a real API, and exposes a small toolkit
- * (`postWebhook`, `makeWebhookPayload`, `fakeGetOrder`, `buildApiOrder`)
- * shared by the controller test and the higher-level flow tests.
+ * Builds + signs the fat JSON payload Vatly would POST. As of
+ * vatly-fluent-php alpha.19 the webhook event factory hydrates the
+ * money/tax-bearing events straight from the signed payload (no follow-up
+ * `GET`), so the `post*Webhook` helpers serialize a built api-php Resource
+ * into the delivery's `object`. The `fakeGetCheckout(s)` helpers remain for
+ * the anonymous-checkout *return* flow (`claimVatlyCustomerFromReturn`),
+ * which still resolves the checkout through a real fluent `GetCheckout` call.
+ *
+ * Shared by the controller test and the higher-level flow tests.
  */
 trait PostsVatlyWebhooks
 {
@@ -91,26 +92,6 @@ trait PostsVatlyWebhooks
     }
 
     /**
-     * Replace the cached `GetOrder` action on the composition root so
-     * the `order.paid` webhook flow doesn't need a real API call. Clears
-     * the downstream WebhookEventFactory / WebhookProcessor caches so
-     * they re-resolve through the mocked action.
-     */
-    protected function fakeGetOrder(ApiOrder $order): void
-    {
-        $action = Mockery::mock(GetOrder::class);
-        $action->shouldReceive('execute')->andReturn($order);
-
-        $vatly = $this->app->make(Vatly::class);
-
-        $this->writeVatlyPrivate($vatly, 'getOrder', $action);
-        $this->writeVatlyPrivate($vatly, 'webhookEventFactory', null);
-        $this->writeVatlyPrivate($vatly, 'webhookProcessor', null);
-
-        $this->app->forgetInstance(WebhookProcessor::class);
-    }
-
-    /**
      * Replace the cached `GetCheckout` action on the composition root so the
      * anonymous-checkout return flow (`claimVatlyCustomerFromReturn`) doesn't
      * need a real API call. Convenience wrapper around
@@ -160,93 +141,7 @@ trait PostsVatlyWebhooks
     }
 
     /**
-     * Replace the cached `GetSubscription` action on the composition root
-     * so the `subscription.started` webhook flow doesn't need a real API
-     * call. WebhookEventFactory enriches the event via this action to pull
-     * the mandate summary into the dispatched event.
-     *
-     * Returns the same subscription regardless of which Vatly id is asked
-     * for. For tests that need different subscriptions per id, use
-     * {@see self::fakeGetSubscriptions()}.
-     */
-    /**
-     * Replace the cached `GetRefund` action on the composition root so the
-     * `refund.*` webhook flow doesn't need a real API call. The factory
-     * enriches refund events via this action to carry the full tax breakdown.
-     */
-    protected function fakeGetRefund(ApiRefund $refund): void
-    {
-        $action = Mockery::mock(GetRefund::class);
-        $action->shouldReceive('execute')->andReturn($refund);
-
-        $vatly = $this->app->make(Vatly::class);
-
-        $this->writeVatlyPrivate($vatly, 'getRefund', $action);
-        $this->writeVatlyPrivate($vatly, 'webhookEventFactory', null);
-        $this->writeVatlyPrivate($vatly, 'webhookProcessor', null);
-
-        $this->app->forgetInstance(WebhookProcessor::class);
-    }
-
-    /**
-     * Replace the cached `GetChargeback` action on the composition root so the
-     * `order.chargeback_*` webhook flow doesn't need a real API call. The
-     * factory enriches chargeback events via this action to carry the customer
-     * id, dispute status, and full tax breakdown.
-     */
-    protected function fakeGetChargeback(ApiChargeback $chargeback): void
-    {
-        $action = Mockery::mock(GetChargeback::class);
-        $action->shouldReceive('execute')->andReturn($chargeback);
-
-        $vatly = $this->app->make(Vatly::class);
-
-        $this->writeVatlyPrivate($vatly, 'getChargeback', $action);
-        $this->writeVatlyPrivate($vatly, 'webhookEventFactory', null);
-        $this->writeVatlyPrivate($vatly, 'webhookProcessor', null);
-
-        $this->app->forgetInstance(WebhookProcessor::class);
-    }
-
-    protected function fakeGetSubscription(ApiSubscription $subscription): void
-    {
-        $this->fakeGetSubscriptions([
-            $subscription->id => $subscription,
-        ], strict: false);
-    }
-
-    /**
-     * Replace the cached `GetSubscription` action with a fake that returns
-     * a different `ApiSubscription` per Vatly subscription id.
-     *
-     * @param  array<string, ApiSubscription>  $subscriptions  keyed by Vatly subscription id
-     * @param  bool  $strict  when true, asking for an id not in the map throws.
-     */
-    protected function fakeGetSubscriptions(array $subscriptions, bool $strict = true): void
-    {
-        $action = Mockery::mock(GetSubscription::class);
-        $action->shouldReceive('execute')->andReturnUsing(function (string $id) use ($subscriptions, $strict) {
-            if (isset($subscriptions[$id])) {
-                return $subscriptions[$id];
-            }
-            if ($strict) {
-                throw new \RuntimeException("No fake ApiSubscription registered for id '{$id}'.");
-            }
-
-            return reset($subscriptions);
-        });
-
-        $vatly = $this->app->make(Vatly::class);
-
-        $this->writeVatlyPrivate($vatly, 'getSubscription', $action);
-        $this->writeVatlyPrivate($vatly, 'webhookEventFactory', null);
-        $this->writeVatlyPrivate($vatly, 'webhookProcessor', null);
-
-        $this->app->forgetInstance(WebhookProcessor::class);
-    }
-
-    /**
-     * Build a minimal ApiSubscription for `fakeGetSubscription()` callers.
+     * Build a minimal ApiSubscription for `subscription.*` webhook tests.
      *
      * @param  array{
      *   id: string,
@@ -275,6 +170,105 @@ trait PostsVatlyWebhooks
         $ref = (new ReflectionClass($target))->getProperty($property);
         $ref->setAccessible(true);
         $ref->setValue($target, $value);
+    }
+
+    /**
+     * Serialize a built api-php Resource back into the API-shaped `object`
+     * tree Vatly embeds on a fat webhook delivery.
+     *
+     * As of vatly-fluent-php alpha.19 the webhook event factory hydrates the
+     * money/tax-bearing events straight from `$webhook->object` (no follow-up
+     * `GET`), so the posted payload must carry the full resource — byte-shaped
+     * like a `GET /…/{id}` body. This reflects the resource's *initialized*
+     * public properties (the builders only set the ones the events read) and
+     * re-encodes the `Money` / `TaxSummaryCollection` / `Mandate` value objects
+     * into the raw array form {@see ResourceFactory} parses.
+     *
+     * @return array<string, mixed>
+     */
+    protected function apiResourceToWebhookObject(object $resource): array
+    {
+        $object = [];
+
+        foreach ((new ReflectionClass($resource))->getProperties() as $property) {
+            if ($property->isStatic() || ! $property->isPublic()) {
+                continue;
+            }
+
+            // Skip typed-but-unset properties the builder never populated, and
+            // the resource's injected api client.
+            if (! $property->isInitialized($resource) || $property->getName() === 'apiClient') {
+                continue;
+            }
+
+            $object[$property->getName()] = $this->encodeWebhookValue($property->getValue($resource));
+        }
+
+        return $object;
+    }
+
+    private function encodeWebhookValue(mixed $value): mixed
+    {
+        if ($value instanceof Money) {
+            return ['currency' => $value->currency, 'value' => $value->value];
+        }
+
+        if ($value instanceof Mandate) {
+            return ['method' => $value->method, 'maskedIdentifier' => $value->maskedIdentifier];
+        }
+
+        if ($value instanceof TaxSummaryCollection) {
+            return array_map(
+                fn ($item) => [
+                    'taxRate' => [
+                        'name' => $item->taxRate->name,
+                        'percentage' => $item->taxRate->percentage,
+                        'taxablePercentage' => $item->taxRate->taxablePercentage,
+                    ],
+                    'amount' => ['currency' => $item->amount->currency, 'value' => $item->amount->value],
+                ],
+                $value->items,
+            );
+        }
+
+        if (is_array($value)) {
+            return array_map(fn ($item) => $this->encodeWebhookValue($item), $value);
+        }
+
+        if ($value instanceof \stdClass) {
+            return (array) $value;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Build + sign + POST an `order.*` webhook carrying the full order as its
+     * fat `object` payload. Replaces the old `fakeGetOrder()` + sparse-payload
+     * dance now that the factory hydrates straight from the payload.
+     */
+    protected function postOrderWebhook(string $eventName, ApiOrder $order): TestResponse
+    {
+        return $this->postWebhookEvent($eventName, $order->id, 'order', $this->apiResourceToWebhookObject($order));
+    }
+
+    protected function postSubscriptionWebhook(string $eventName, ApiSubscription $subscription): TestResponse
+    {
+        return $this->postWebhookEvent($eventName, $subscription->id, 'subscription', $this->apiResourceToWebhookObject($subscription));
+    }
+
+    protected function postRefundWebhook(string $eventName, ApiRefund $refund): TestResponse
+    {
+        return $this->postWebhookEvent($eventName, $refund->id, 'refund', $this->apiResourceToWebhookObject($refund));
+    }
+
+    /**
+     * Chargeback webhooks key on the originating order id (`entityType: order`,
+     * `entityId: <originalOrderId>`); the chargeback itself rides in `object`.
+     */
+    protected function postChargebackWebhook(string $eventName, ApiChargeback $chargeback): TestResponse
+    {
+        return $this->postWebhookEvent($eventName, $chargeback->originalOrderId, 'order', $this->apiResourceToWebhookObject($chargeback));
     }
 
     /**
