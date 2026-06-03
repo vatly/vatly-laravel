@@ -44,20 +44,13 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
     {
         User::factory()->create(['vatly_id' => 'customer_foo']);
 
-        $this->fakeGetSubscription($this->buildApiSubscription([
+        $response = $this->postSubscriptionWebhook('subscription.started', $this->buildApiSubscription([
             'id' => 'sub_123',
             'customerId' => 'customer_foo',
             'subscriptionPlanId' => 'plan_foo',
             'name' => 'Test Plan',
             'quantity' => 1,
         ]));
-
-        $response = $this->postWebhookEvent('subscription.started', 'sub_123', 'subscription', [
-            'customerId' => 'customer_foo',
-            'subscriptionPlanId' => 'plan_foo',
-            'quantity' => 1,
-            'name' => 'Test Plan',
-        ]);
 
         $response->assertStatus(201);
         $this->assertDatabaseCount('vatly_webhook_calls', 1);
@@ -121,7 +114,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
     {
         $user = User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetSubscription($this->buildApiSubscription([
+        $response = $this->postSubscriptionWebhook('subscription.started', $this->buildApiSubscription([
             'id' => 'sub_999',
             'customerId' => 'customer_abc',
             'subscriptionPlanId' => 'plan_premium',
@@ -129,13 +122,6 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'quantity' => 1,
             'mandate' => new Mandate('card', '4242'),
         ]));
-
-        $response = $this->postWebhookEvent('subscription.started', 'sub_999', 'subscription', [
-            'customerId' => 'customer_abc',
-            'subscriptionPlanId' => 'plan_premium',
-            'quantity' => 1,
-            'name' => 'Premium Plan',
-        ]);
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('vatly_subscriptions', [
@@ -152,7 +138,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
     {
         $user = User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetOrder($this->buildApiOrder([
+        $response = $this->postOrderWebhook('order.paid', $this->buildApiOrder([
             'id' => 'order_abc123',
             'customerId' => 'customer_abc',
             'totalValue' => '99.00',
@@ -164,13 +150,6 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
         ]));
-
-        $response = $this->postWebhookEvent('order.paid', 'order_abc123', 'order', [
-            'customerId' => 'customer_abc',
-            'total' => ['currency' => 'EUR', 'value' => '99.00'],
-            'invoiceNumber' => 'INV-001',
-            'paymentMethod' => 'card',
-        ]);
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('vatly_orders', [
@@ -186,7 +165,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
     {
         $user = User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetOrder($this->buildApiOrder([
+        $response = $this->postOrderWebhook('order.paid', $this->buildApiOrder([
             'id' => 'order_tax_1',
             'customerId' => 'customer_abc',
             'totalValue' => '49.99',
@@ -198,11 +177,6 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
                 ['name' => 'Sales Tax', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '8.68'],
             ],
         ]));
-
-        $response = $this->postWebhookEvent('order.paid', 'order_tax_1', 'order', [
-            'customerId' => 'customer_abc',
-            'total' => ['currency' => 'USD', 'value' => '49.99'],
-        ]);
 
         $response->assertStatus(201);
 
@@ -222,7 +196,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
     {
         User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetOrder($this->buildApiOrder([
+        $response = $this->postOrderWebhook('order.paid', $this->buildApiOrder([
             'id' => 'order_lines_wh',
             'customerId' => 'customer_abc',
             'totalValue' => '99.00',
@@ -246,13 +220,6 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
                 ],
             ],
         ]));
-
-        $response = $this->postWebhookEvent('order.paid', 'order_lines_wh', 'order', [
-            'customerId' => 'customer_abc',
-            'total' => ['currency' => 'EUR', 'value' => '99.00'],
-            'invoiceNumber' => 'INV-010',
-            'paymentMethod' => 'card',
-        ]);
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('vatly_order_lines', [
@@ -285,14 +252,8 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         ]);
         // The reaction mirrors the upstream status verbatim — not a synthetic "failed".
         $apiOrder->status = 'pending';
-        $this->fakeGetOrder($apiOrder);
 
-        $response = $this->postWebhookEvent('order.payment_failed', 'order_failed_1', 'order', [
-            'customerId' => 'customer_abc',
-            'total' => ['currency' => 'EUR', 'value' => '99.00'],
-            'invoiceNumber' => 'INV-009',
-            'paymentMethod' => 'card',
-        ]);
+        $response = $this->postOrderWebhook('order.payment_failed', $apiOrder);
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('vatly_orders', [
@@ -323,12 +284,8 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             ],
         ]);
         $apiOrder->status = 'pending';
-        $this->fakeGetOrder($apiOrder);
 
-        $this->postWebhookEvent('order.payment_failed', 'order_failed_2', 'order', [
-            'customerId' => 'customer_abc',
-            'total' => ['currency' => 'EUR', 'value' => '99.00'],
-        ])->assertStatus(201);
+        $this->postOrderWebhook('order.payment_failed', $apiOrder)->assertStatus(201);
 
         Event::assertDispatched(
             OrderPaymentFailed::class,
@@ -346,7 +303,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
 
         User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetOrder($this->buildApiOrder([
+        $this->postOrderWebhook('order.paid', $this->buildApiOrder([
             'id' => 'order_created_evt',
             'customerId' => 'customer_abc',
             'totalValue' => '99.00',
@@ -357,14 +314,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'taxRates' => [
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
-        ]));
-
-        $this->postWebhookEvent('order.paid', 'order_created_evt', 'order', [
-            'customerId' => 'customer_abc',
-            'total' => ['currency' => 'EUR', 'value' => '99.00'],
-            'invoiceNumber' => 'INV-100',
-            'paymentMethod' => 'card',
-        ])->assertStatus(201);
+        ]))->assertStatus(201);
 
         Event::assertDispatched(
             OrderWasCreatedFromWebhook::class,
@@ -587,7 +537,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
     {
         $user = User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetRefund($this->buildApiRefund([
+        $response = $this->postRefundWebhook('refund.completed', $this->buildApiRefund([
             'id' => 'refund_abc123',
             'customerId' => 'customer_abc',
             'originalOrderId' => 'order_abc123',
@@ -599,10 +549,6 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
         ]));
-
-        $response = $this->postWebhookEvent('refund.completed', 'refund_abc123', 'refund', [
-            'customerId' => 'customer_abc',
-        ]);
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('vatly_refunds', [
@@ -626,7 +572,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
 
         User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetRefund($this->buildApiRefund([
+        $this->postRefundWebhook('refund.completed', $this->buildApiRefund([
             'id' => 'refund_evt_1',
             'customerId' => 'customer_abc',
             'originalOrderId' => 'order_abc123',
@@ -637,11 +583,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'taxRates' => [
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
-        ]));
-
-        $this->postWebhookEvent('refund.completed', 'refund_evt_1', 'refund', [
-            'customerId' => 'customer_abc',
-        ])->assertStatus(201);
+        ]))->assertStatus(201);
 
         Event::assertDispatched(
             RefundCompleted::class,
@@ -659,7 +601,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
 
         User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetRefund($this->buildApiRefund([
+        $this->postRefundWebhook('refund.failed', $this->buildApiRefund([
             'id' => 'refund_evt_2',
             'customerId' => 'customer_abc',
             'originalOrderId' => 'order_abc123',
@@ -670,11 +612,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'taxRates' => [
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
-        ]));
-
-        $this->postWebhookEvent('refund.failed', 'refund_evt_2', 'refund', [
-            'customerId' => 'customer_abc',
-        ])->assertStatus(201);
+        ]))->assertStatus(201);
 
         Event::assertDispatched(
             RefundFailed::class,
@@ -691,7 +629,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
 
         User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetRefund($this->buildApiRefund([
+        $this->postRefundWebhook('refund.canceled', $this->buildApiRefund([
             'id' => 'refund_evt_3',
             'customerId' => 'customer_abc',
             'originalOrderId' => 'order_abc123',
@@ -702,11 +640,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'taxRates' => [
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
-        ]));
-
-        $this->postWebhookEvent('refund.canceled', 'refund_evt_3', 'refund', [
-            'customerId' => 'customer_abc',
-        ])->assertStatus(201);
+        ]))->assertStatus(201);
 
         Event::assertDispatched(
             RefundCanceled::class,
@@ -723,7 +657,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
 
         User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetChargeback($this->buildApiChargeback([
+        $this->postChargebackWebhook('order.chargeback_received', $this->buildApiChargeback([
             'id' => 'chargeback_evt_1',
             'customerId' => 'customer_abc',
             'originalOrderId' => 'order_abc123',
@@ -735,13 +669,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'taxRates' => [
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
-        ]));
-
-        $this->postWebhookEvent('order.chargeback_received', 'order_abc123', 'order', [
-            'id' => 'chargeback_evt_1',
-            'originalOrderId' => 'order_abc123',
-            'reason' => 'fraud',
-        ])->assertStatus(201);
+        ]))->assertStatus(201);
 
         Event::assertDispatched(
             OrderChargebackReceived::class,
@@ -760,7 +688,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
 
         User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetChargeback($this->buildApiChargeback([
+        $this->postChargebackWebhook('order.chargeback_reversed', $this->buildApiChargeback([
             'id' => 'chargeback_evt_2',
             'customerId' => 'customer_abc',
             'originalOrderId' => 'order_abc123',
@@ -772,13 +700,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'taxRates' => [
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
-        ]));
-
-        $this->postWebhookEvent('order.chargeback_reversed', 'order_abc123', 'order', [
-            'id' => 'chargeback_evt_2',
-            'originalOrderId' => 'order_abc123',
-            'reason' => 'fraud',
-        ])->assertStatus(201);
+        ]))->assertStatus(201);
 
         Event::assertDispatched(
             OrderChargebackReversed::class,
@@ -794,7 +716,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
     {
         $user = User::factory()->create(['vatly_id' => 'customer_abc']);
 
-        $this->fakeGetChargeback($this->buildApiChargeback([
+        $response = $this->postChargebackWebhook('order.chargeback_received', $this->buildApiChargeback([
             'id' => 'chargeback_abc123',
             'customerId' => 'customer_abc',
             'originalOrderId' => 'order_abc123',
@@ -807,12 +729,6 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
         ]));
-
-        $response = $this->postWebhookEvent('order.chargeback_received', 'order_abc123', 'order', [
-            'id' => 'chargeback_abc123',
-            'originalOrderId' => 'order_abc123',
-            'reason' => 'fraud',
-        ]);
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('vatly_chargebacks', [
@@ -849,7 +765,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'reason' => 'fraud',
         ]);
 
-        $this->fakeGetChargeback($this->buildApiChargeback([
+        $response = $this->postChargebackWebhook('order.chargeback_reversed', $this->buildApiChargeback([
             'id' => 'chargeback_rev1',
             'customerId' => 'customer_abc',
             'originalOrderId' => 'order_abc123',
@@ -862,12 +778,6 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
         ]));
-
-        $response = $this->postWebhookEvent('order.chargeback_reversed', 'order_abc123', 'order', [
-            'id' => 'chargeback_rev1',
-            'originalOrderId' => 'order_abc123',
-            'reason' => 'fraud',
-        ]);
 
         $response->assertStatus(201);
         $this->assertDatabaseCount('vatly_chargebacks', 1);

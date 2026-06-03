@@ -45,10 +45,7 @@ class AnonymousCheckoutFlowTest extends BaseTestCase
     {
         $anonymousCustomerId = 'cus_anon_alice';
 
-        // Stage the order.paid mock up-front. Fluent's GetOrder action is
-        // captured the moment the WebhookProcessor is first resolved, so the
-        // mock must be in place before any webhook lands.
-        $this->fakeGetOrder($this->buildApiOrder([
+        $anonOrder = $this->buildApiOrder([
             'id' => 'order_anon_1',
             'customerId' => $anonymousCustomerId,
             'totalValue' => '99.00',
@@ -59,7 +56,7 @@ class AnonymousCheckoutFlowTest extends BaseTestCase
             'taxRates' => [
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
-        ]));
+        ]);
 
         // ---------------- 1. Anonymous visitor's subscription starts. ----------------
         // No User row exists yet; the webhook arrives for a Vatly customer
@@ -67,20 +64,13 @@ class AnonymousCheckoutFlowTest extends BaseTestCase
 
         $this->assertDatabaseMissing('users', ['vatly_id' => $anonymousCustomerId]);
 
-        $this->fakeGetSubscription($this->buildApiSubscription([
+        $this->postSubscriptionWebhook('subscription.started', $this->buildApiSubscription([
             'id' => 'sub_anon_1',
             'customerId' => $anonymousCustomerId,
             'subscriptionPlanId' => 'plan_basic',
             'name' => 'Basic',
             'quantity' => 1,
-        ]));
-
-        $this->postWebhookEvent('subscription.started', 'sub_anon_1', 'subscription', [
-            'customerId' => $anonymousCustomerId,
-            'subscriptionPlanId' => 'plan_basic',
-            'quantity' => 1,
-            'name' => 'Basic',
-        ])->assertStatus(201);
+        ]))->assertStatus(201);
 
         // The subscription was persisted with the Vatly customer id but no host owner.
         $sub = Subscription::where('vatly_id', 'sub_anon_1')->firstOrFail();
@@ -89,12 +79,7 @@ class AnonymousCheckoutFlowTest extends BaseTestCase
         $this->assertNull($sub->owner_type);
 
         // ---------------- 2. Same anonymous customer pays an order. ----------------
-        $this->postWebhookEvent('order.paid', 'order_anon_1', 'order', [
-            'customerId' => $anonymousCustomerId,
-            'total' => ['currency' => 'EUR', 'value' => '99.00'],
-            'invoiceNumber' => 'INV-ANON-001',
-            'paymentMethod' => 'card',
-        ])->assertStatus(201);
+        $this->postOrderWebhook('order.paid', $anonOrder)->assertStatus(201);
 
         $order = Order::where('vatly_id', 'order_anon_1')->firstOrFail();
         $this->assertSame($anonymousCustomerId, $order->customer_id);
@@ -147,36 +132,21 @@ class AnonymousCheckoutFlowTest extends BaseTestCase
     public function test_claim_does_not_touch_purchases_belonging_to_a_different_anonymous_customer(): void
     {
         // Two distinct anonymous customers each made a purchase.
-        $this->fakeGetSubscriptions([
-            'sub_alice' => $this->buildApiSubscription([
-                'id' => 'sub_alice',
-                'customerId' => 'cus_alice',
-                'subscriptionPlanId' => 'plan_basic',
-                'name' => 'Basic',
-                'quantity' => 1,
-            ]),
-            'sub_bob' => $this->buildApiSubscription([
-                'id' => 'sub_bob',
-                'customerId' => 'cus_bob',
-                'subscriptionPlanId' => 'plan_basic',
-                'name' => 'Basic',
-                'quantity' => 1,
-            ]),
-        ]);
-
-        $this->postWebhookEvent('subscription.started', 'sub_alice', 'subscription', [
+        $this->postSubscriptionWebhook('subscription.started', $this->buildApiSubscription([
+            'id' => 'sub_alice',
             'customerId' => 'cus_alice',
             'subscriptionPlanId' => 'plan_basic',
-            'quantity' => 1,
             'name' => 'Basic',
-        ])->assertStatus(201);
+            'quantity' => 1,
+        ]))->assertStatus(201);
 
-        $this->postWebhookEvent('subscription.started', 'sub_bob', 'subscription', [
+        $this->postSubscriptionWebhook('subscription.started', $this->buildApiSubscription([
+            'id' => 'sub_bob',
             'customerId' => 'cus_bob',
             'subscriptionPlanId' => 'plan_basic',
-            'quantity' => 1,
             'name' => 'Basic',
-        ])->assertStatus(201);
+            'quantity' => 1,
+        ]))->assertStatus(201);
 
         // Alice signs up and claims her purchase.
         $alice = User::factory()->create(['email' => 'alice@example.test', 'vatly_id' => null]);
@@ -193,13 +163,7 @@ class AnonymousCheckoutFlowTest extends BaseTestCase
 
     public function test_subsequent_webhook_after_signup_arrives_already_attributed(): void
     {
-        // Stage the order.paid mock up-front; fluent's GetOrder is cached on
-        // the composition root the moment a WebhookProcessor is resolved, so
-        // any fakeGetOrder() call has to land before that resolution to take
-        // effect. (Calling it after the first webhook works in principle —
-        // we clear the relevant caches — but real apps don't switch the
-        // GetOrder action mid-test, so we mirror that here.)
-        $this->fakeGetOrder($this->buildApiOrder([
+        $postSignupApiOrder = $this->buildApiOrder([
             'id' => 'order_post_signup',
             'customerId' => 'cus_charlie',
             'totalValue' => '19.00',
@@ -210,23 +174,16 @@ class AnonymousCheckoutFlowTest extends BaseTestCase
             'taxRates' => [
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '3.30'],
             ],
-        ]));
+        ]);
 
-        $this->fakeGetSubscription($this->buildApiSubscription([
+        // Anonymous purchase lands first.
+        $this->postSubscriptionWebhook('subscription.started', $this->buildApiSubscription([
             'id' => 'sub_first',
             'customerId' => 'cus_charlie',
             'subscriptionPlanId' => 'plan_basic',
             'name' => 'Basic',
             'quantity' => 1,
-        ]));
-
-        // Anonymous purchase lands first.
-        $this->postWebhookEvent('subscription.started', 'sub_first', 'subscription', [
-            'customerId' => 'cus_charlie',
-            'subscriptionPlanId' => 'plan_basic',
-            'quantity' => 1,
-            'name' => 'Basic',
-        ])->assertStatus(201);
+        ]))->assertStatus(201);
 
         // User signs up and claims.
         $user = User::factory()->create(['email' => 'charlie@example.test', 'vatly_id' => null]);
@@ -235,12 +192,7 @@ class AnonymousCheckoutFlowTest extends BaseTestCase
         // A follow-up webhook for the same Vatly customer (e.g. they bought
         // a second plan after signing up) now finds the binding in place
         // and writes the host owner directly — no claim step needed.
-        $this->postWebhookEvent('order.paid', 'order_post_signup', 'order', [
-            'customerId' => 'cus_charlie',
-            'total' => ['currency' => 'EUR', 'value' => '19.00'],
-            'invoiceNumber' => 'INV-POST-001',
-            'paymentMethod' => 'card',
-        ])->assertStatus(201);
+        $this->postOrderWebhook('order.paid', $postSignupApiOrder)->assertStatus(201);
 
         $postSignupOrder = Order::where('vatly_id', 'order_post_signup')->firstOrFail();
         $this->assertSame($user->id, $postSignupOrder->owner_id);
@@ -252,23 +204,14 @@ class AnonymousCheckoutFlowTest extends BaseTestCase
         // Two anonymous customers, each with their own subscription persisted
         // via webhook, and each with their own checkout id (one browser tab
         // per checkout — the multi-tab failure mode of a shared session).
-        $this->fakeGetSubscriptions([
-            'sub_alice' => $this->buildApiSubscription([
-                'id' => 'sub_alice', 'customerId' => 'cus_alice',
-                'subscriptionPlanId' => 'plan_basic', 'name' => 'Basic', 'quantity' => 1,
-            ]),
-            'sub_bob' => $this->buildApiSubscription([
-                'id' => 'sub_bob', 'customerId' => 'cus_bob',
-                'subscriptionPlanId' => 'plan_basic', 'name' => 'Basic', 'quantity' => 1,
-            ]),
-        ]);
-
-        $this->postWebhookEvent('subscription.started', 'sub_alice', 'subscription', [
-            'customerId' => 'cus_alice', 'subscriptionPlanId' => 'plan_basic', 'quantity' => 1, 'name' => 'Basic',
-        ])->assertStatus(201);
-        $this->postWebhookEvent('subscription.started', 'sub_bob', 'subscription', [
-            'customerId' => 'cus_bob', 'subscriptionPlanId' => 'plan_basic', 'quantity' => 1, 'name' => 'Basic',
-        ])->assertStatus(201);
+        $this->postSubscriptionWebhook('subscription.started', $this->buildApiSubscription([
+            'id' => 'sub_alice', 'customerId' => 'cus_alice',
+            'subscriptionPlanId' => 'plan_basic', 'name' => 'Basic', 'quantity' => 1,
+        ]))->assertStatus(201);
+        $this->postSubscriptionWebhook('subscription.started', $this->buildApiSubscription([
+            'id' => 'sub_bob', 'customerId' => 'cus_bob',
+            'subscriptionPlanId' => 'plan_basic', 'name' => 'Basic', 'quantity' => 1,
+        ]))->assertStatus(201);
 
         // Both checkouts are resolvable; each carries its own customer.
         $this->fakeGetCheckouts([
