@@ -6,7 +6,14 @@ namespace Vatly\Laravel\Tests\Models;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
+use Vatly\API\Resources\Order as ApiOrder;
+use Vatly\API\Types\Money as ApiMoney;
+use Vatly\API\VatlyApiClient;
+use Vatly\Fluent\Actions\GetOrder;
 use Vatly\Fluent\Contracts\OrderInterface;
+use Vatly\Fluent\OrderHandle;
+use Vatly\Fluent\Vatly;
 use Vatly\Laravel\Models\Chargeback;
 use Vatly\Laravel\Models\Order;
 use Vatly\Laravel\Models\Refund;
@@ -167,5 +174,90 @@ class OrderTest extends BaseTestCase
 
         $this->assertCount(1, $order->chargebacks);
         $this->assertSame('chargeback_1', $order->chargebacks->first()->getVatlyId());
+    }
+
+    public function test_reversal_helpers_surface_a_partial_reversal_from_the_api_order(): void
+    {
+        $order = Order::create([
+            'vatly_id' => 'ord_partial_reversal',
+            'status' => 'paid',
+            'total' => 12100,
+            'subtotal' => 10000,
+            'currency' => 'EUR',
+        ]);
+
+        $this->fakeVatlyOrder($order, subtotal: '100.00', reversed: '40.00', refundable: '60.00');
+
+        // The local status stays terminal `paid` — reversal progress is read live.
+        $this->assertSame('paid', $order->getStatus());
+        $this->assertSame(4000, $order->reversedSubtotal());
+        $this->assertSame(6000, $order->refundableSubtotal());
+        $this->assertTrue($order->isReversed());
+        $this->assertTrue($order->isPartiallyReversed());
+        $this->assertFalse($order->isFullyReversed());
+    }
+
+    public function test_reversal_helpers_surface_a_full_reversal_from_the_api_order(): void
+    {
+        $order = Order::create([
+            'vatly_id' => 'ord_full_reversal',
+            'status' => 'paid',
+            'total' => 12100,
+            'subtotal' => 10000,
+            'currency' => 'EUR',
+        ]);
+
+        $this->fakeVatlyOrder($order, subtotal: '100.00', reversed: '100.00', refundable: '0.00');
+
+        $this->assertSame(10000, $order->reversedSubtotal());
+        $this->assertSame(0, $order->refundableSubtotal());
+        $this->assertTrue($order->isReversed());
+        $this->assertFalse($order->isPartiallyReversed());
+        $this->assertTrue($order->isFullyReversed());
+    }
+
+    public function test_reversal_helpers_report_no_reversal_for_an_untouched_order(): void
+    {
+        $order = Order::create([
+            'vatly_id' => 'ord_no_reversal',
+            'status' => 'paid',
+            'total' => 12100,
+            'subtotal' => 10000,
+            'currency' => 'EUR',
+        ]);
+
+        $this->fakeVatlyOrder($order, subtotal: '100.00', reversed: '0.00', refundable: '100.00');
+
+        $this->assertSame(0, $order->reversedSubtotal());
+        $this->assertSame(10000, $order->refundableSubtotal());
+        $this->assertFalse($order->isReversed());
+        $this->assertFalse($order->isPartiallyReversed());
+        $this->assertFalse($order->isFullyReversed());
+    }
+
+    /**
+     * Bind the {@see Vatly} facade so that resolving a handle for `$order`
+     * returns one backed by a canned API order with the given reversal figures,
+     * letting the model's reversal helpers run the real {@see OrderHandle} logic
+     * without hitting the network.
+     */
+    private function fakeVatlyOrder(Order $order, string $subtotal, string $reversed, string $refundable): void
+    {
+        $apiOrder = new ApiOrder(Mockery::mock(VatlyApiClient::class));
+        $apiOrder->subtotal = new ApiMoney('EUR', $subtotal);
+        $apiOrder->reversedSubtotal = new ApiMoney('EUR', $reversed);
+        $apiOrder->refundableSubtotal = new ApiMoney('EUR', $refundable);
+
+        $getOrder = Mockery::mock(GetOrder::class);
+        $getOrder->shouldReceive('execute')
+            ->with($order->getVatlyId())
+            ->andReturn($apiOrder);
+
+        $handle = new OrderHandle($order, $getOrder);
+
+        $vatly = Mockery::mock(Vatly::class);
+        $vatly->shouldReceive('order')->with($order)->andReturn($handle);
+
+        $this->app->instance(Vatly::class, $vatly);
     }
 }

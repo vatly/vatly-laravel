@@ -132,6 +132,14 @@ $user->chargebacks;                                     // all chargebacks (disp
 $order->refunds;                                        // refunds against this order
 $order->chargebacks;                                    // chargebacks against this order
 
+// Reversal progress — read live from the Vatly API (status stays `paid`).
+// Combines refunds and chargebacks: "did money come back, and how much".
+$order->isReversed();                                   // any subtotal reversed?
+$order->isPartiallyReversed();                          // reversed, but not in full
+$order->isFullyReversed();                              // full subtotal reversed
+$order->reversedSubtotal();                             // reversed subtotal, in cents
+$order->refundableSubtotal();                           // still-reversible subtotal, in cents
+
 // Static finders
 $user = User::findBillable('customer_xyz');             // ?User
 $user = User::findBillableOrFail('customer_xyz');       // User
