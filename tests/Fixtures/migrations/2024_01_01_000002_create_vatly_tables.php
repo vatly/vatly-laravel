@@ -53,6 +53,21 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('vatly_chargebacks', function (Blueprint $table) {
+            $table->id();
+            $table->nullableMorphs('owner');
+            $table->string('vatly_id')->unique();
+            $table->string('original_order_id')->index();
+            $table->string('status');
+            $table->integer('total');
+            $table->integer('subtotal')->nullable();
+            $table->json('tax_summary')->nullable();
+            $table->string('currency');
+            $table->string('reason')->nullable();
+            $table->string('customer_id')->nullable()->index();
+            $table->timestamps();
+        });
+
         Schema::create('vatly_webhook_calls', function (Blueprint $table) {
             $table->id();
             $table->timestamps();

@@ -16,7 +16,9 @@ use Vatly\Fluent\OrderHandle;
 use Vatly\Fluent\SubscriptionHandle;
 use Vatly\Fluent\Vatly;
 use Vatly\Laravel\Exceptions\NoVatlyCustomerException;
+use Vatly\Laravel\Models\Chargeback;
 use Vatly\Laravel\Models\Order;
+use Vatly\Laravel\Models\Refund;
 use Vatly\Laravel\Models\Subscription;
 
 /**
@@ -87,6 +89,22 @@ trait Billable
     public function orders(): MorphMany
     {
         return $this->morphMany(Order::class, 'owner')->orderByDesc('created_at');
+    }
+
+    /**
+     * @return MorphMany<Refund>
+     */
+    public function refunds(): MorphMany
+    {
+        return $this->morphMany(Refund::class, 'owner')->orderByDesc('created_at');
+    }
+
+    /**
+     * @return MorphMany<Chargeback>
+     */
+    public function chargebacks(): MorphMany
+    {
+        return $this->morphMany(Chargeback::class, 'owner')->orderByDesc('created_at');
     }
 
     // --- Subscription accessors ---

@@ -7,7 +7,9 @@ namespace Vatly\Laravel\Tests\Models;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Vatly\Fluent\Contracts\OrderInterface;
+use Vatly\Laravel\Models\Chargeback;
 use Vatly\Laravel\Models\Order;
+use Vatly\Laravel\Models\Refund;
 use Vatly\Laravel\Tests\BaseTestCase;
 
 class OrderTest extends BaseTestCase
@@ -104,5 +106,66 @@ class OrderTest extends BaseTestCase
         $order = new Order(['status' => 'pending']);
 
         $this->assertFalse($order->isPaid());
+    }
+
+    public function test_it_exposes_refunds_linked_on_the_vatly_order_id(): void
+    {
+        Order::create([
+            'vatly_id' => 'ord_refunds_1',
+            'status' => 'paid',
+            'total' => 9900,
+            'currency' => 'EUR',
+        ]);
+
+        Refund::create([
+            'vatly_id' => 'refund_1',
+            'original_order_id' => 'ord_refunds_1',
+            'status' => 'refunded',
+            'total' => 5000,
+            'currency' => 'EUR',
+        ]);
+        // A refund against a different order must not leak in.
+        Refund::create([
+            'vatly_id' => 'refund_other',
+            'original_order_id' => 'ord_other',
+            'status' => 'refunded',
+            'total' => 100,
+            'currency' => 'EUR',
+        ]);
+
+        $order = Order::where('vatly_id', 'ord_refunds_1')->firstOrFail();
+
+        $this->assertCount(1, $order->refunds);
+        $this->assertSame('refund_1', $order->refunds->first()->getVatlyId());
+    }
+
+    public function test_it_exposes_chargebacks_linked_on_the_vatly_order_id(): void
+    {
+        Order::create([
+            'vatly_id' => 'ord_cb_1',
+            'status' => 'paid',
+            'total' => 9900,
+            'currency' => 'EUR',
+        ]);
+
+        Chargeback::create([
+            'vatly_id' => 'chargeback_1',
+            'original_order_id' => 'ord_cb_1',
+            'status' => 'pending',
+            'total' => 9900,
+            'currency' => 'EUR',
+        ]);
+        Chargeback::create([
+            'vatly_id' => 'chargeback_other',
+            'original_order_id' => 'ord_other',
+            'status' => 'pending',
+            'total' => 100,
+            'currency' => 'EUR',
+        ]);
+
+        $order = Order::where('vatly_id', 'ord_cb_1')->firstOrFail();
+
+        $this->assertCount(1, $order->chargebacks);
+        $this->assertSame('chargeback_1', $order->chargebacks->first()->getVatlyId());
     }
 }

@@ -63,7 +63,7 @@ Pin to an exact version during alpha — the API will change.
    php artisan migrate
    ```
 
-   This adds a `vatly_id` column to your users table plus `vatly_subscriptions`, `vatly_orders`, `vatly_refunds`, and `vatly_webhook_calls` tables.
+   This adds a `vatly_id` column to your users table plus `vatly_subscriptions`, `vatly_orders`, `vatly_refunds`, `vatly_chargebacks`, and `vatly_webhook_calls` tables.
 
 4. **Add the `Billable` trait to your User model:**
 
@@ -126,6 +126,12 @@ foreach ($user->orders as $order) {
 // Or explicit lookup
 $invoiceUrl = $user->order('order_abc')->invoiceUrl();
 
+// Refunds & chargebacks — owned-by-customer and per-order relations
+$user->refunds;                                         // all refunds for this customer
+$user->chargebacks;                                     // all chargebacks (disputes) for this customer
+$order->refunds;                                        // refunds against this order
+$order->chargebacks;                                    // chargebacks against this order
+
 // Static finders
 $user = User::findBillable('customer_xyz');             // ?User
 $user = User::findBillableOrFail('customer_xyz');       // User
@@ -151,7 +157,7 @@ Events available:
 
 - `Vatly\Fluent\Events\OrderPaid` — carries `total`, `subtotal`, `taxSummary` (full per-rate breakdown), `currency`, `invoiceNumber`, `paymentMethod`. Materialize local invoices without an extra API call.
 - `Vatly\Fluent\Events\OrderCanceled` — the local order's status is mirrored to `canceled`.
-- `Vatly\Fluent\Events\OrderChargebackReceived` / `OrderChargebackReversed` — dispute signals carrying the affected `orderId` (no local row is mutated; react to suspend/reinstate access).
+- `Vatly\Fluent\Events\OrderChargebackReceived` / `OrderChargebackReversed` — dispute signals carrying the affected `orderId`, enriched with `customerId`, dispute `status`, totals and `taxSummary`; persisted to `vatly_chargebacks` (see below). Also react to suspend/reinstate access — a chargeback never mutates the local order row.
 - `Vatly\Fluent\Events\PaymentFailed` — same enriched order shape as `OrderPaid`; typically the start of dunning.
 - `Vatly\Fluent\Events\CheckoutPaid` / `CheckoutFailed` / `CheckoutCanceled` / `CheckoutExpired` — hosted-checkout lifecycle signals carrying `checkoutId`, nullable `customerId` / `orderId`, `status` and `metadata`. Dispatched straight from the payload (no enrichment GET, no local row); `CheckoutPaid` fires before `OrderPaid` so you can drive in-app receipt/analytics UI, while the others feed retry / cart-abandonment flows.
 - `Vatly\Fluent\Events\RefundCompleted` / `RefundFailed` / `RefundCanceled` — each with full `taxSummary`; persisted to `vatly_refunds` (see below).
@@ -164,7 +170,7 @@ Events available:
 - `Vatly\Fluent\Events\LocalSubscriptionCreated`
 - `Vatly\Fluent\Events\UnsupportedWebhookReceived`
 
-Refund webhooks (`refund.completed` / `refund.failed` / `refund.canceled`) are persisted to the `vatly_refunds` table via the bundled `Refund` model and `EloquentRefundRepository`. Chargeback events ship no built-in persistence — Vatly's public order status doesn't change on a chargeback, so wire your own listener if you need to suspend/reinstate access.
+Refund webhooks (`refund.completed` / `refund.failed` / `refund.canceled`) are persisted to the `vatly_refunds` table via the bundled `Refund` model and `EloquentRefundRepository`. Chargeback webhooks (`order.chargeback_received` / `order.chargeback_reversed`) are persisted the same way to the `vatly_chargebacks` table via the bundled `Chargeback` model and `EloquentChargebackRepository` — Vatly's public order status doesn't change on a chargeback, so also wire your own listener if you need to suspend/reinstate access.
 
 The webhook route is named `vatly.webhook` — reach it with `route('vatly.webhook')`.
 

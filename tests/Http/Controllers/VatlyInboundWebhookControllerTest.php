@@ -14,6 +14,7 @@ use Vatly\Fluent\Events\CheckoutFailed;
 use Vatly\Fluent\Events\CheckoutPaid;
 use Vatly\Fluent\Events\PaymentFailed;
 use Vatly\Fluent\Events\SubscriptionCancellationGracePeriodCompleted;
+use Vatly\Laravel\Models\Chargeback;
 use Vatly\Laravel\Models\Order;
 use Vatly\Laravel\Models\Refund;
 use Vatly\Laravel\Models\Subscription;
@@ -505,5 +506,92 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         $this->assertSame(8182, $refund->subtotal);
         $this->assertSame(1718, $refund->tax_summary[0]['amount']);
         $this->assertTrue($refund->isCompleted());
+    }
+
+    public function test_it_persists_a_chargeback_from_webhook(): void
+    {
+        $user = User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        $this->fakeGetChargeback($this->buildApiChargeback([
+            'id' => 'chargeback_abc123',
+            'customerId' => 'customer_abc',
+            'originalOrderId' => 'order_abc123',
+            'status' => 'pending',
+            'reason' => 'fraud',
+            'totalValue' => '99.00',
+            'subtotalValue' => '81.82',
+            'currency' => 'EUR',
+            'taxRates' => [
+                ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
+            ],
+        ]));
+
+        $response = $this->postWebhookEvent('order.chargeback_received', 'order_abc123', 'order', [
+            'id' => 'chargeback_abc123',
+            'originalOrderId' => 'order_abc123',
+            'reason' => 'fraud',
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('vatly_chargebacks', [
+            'vatly_id' => 'chargeback_abc123',
+            'original_order_id' => 'order_abc123',
+            'status' => 'pending',
+            'total' => 9900,
+            'currency' => 'EUR',
+            'reason' => 'fraud',
+            'owner_id' => $user->id,
+        ]);
+
+        $chargeback = Chargeback::where('vatly_id', 'chargeback_abc123')->firstOrFail();
+        $this->assertSame(8182, $chargeback->subtotal);
+        $this->assertSame(1718, $chargeback->tax_summary[0]['amount']);
+        $this->assertSame('fraud', $chargeback->getReason());
+        $this->assertFalse($chargeback->isReversed());
+    }
+
+    public function test_it_updates_a_chargeback_on_reversal_from_webhook(): void
+    {
+        $user = User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        Chargeback::create([
+            'owner_type' => $user->getMorphClass(),
+            'owner_id' => $user->getKey(),
+            'vatly_id' => 'chargeback_rev1',
+            'customer_id' => 'customer_abc',
+            'original_order_id' => 'order_abc123',
+            'status' => 'pending',
+            'total' => 9900,
+            'subtotal' => 8182,
+            'currency' => 'EUR',
+            'reason' => 'fraud',
+        ]);
+
+        $this->fakeGetChargeback($this->buildApiChargeback([
+            'id' => 'chargeback_rev1',
+            'customerId' => 'customer_abc',
+            'originalOrderId' => 'order_abc123',
+            'status' => 'won',
+            'reason' => 'fraud',
+            'totalValue' => '99.00',
+            'subtotalValue' => '81.82',
+            'currency' => 'EUR',
+            'taxRates' => [
+                ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
+            ],
+        ]));
+
+        $response = $this->postWebhookEvent('order.chargeback_reversed', 'order_abc123', 'order', [
+            'id' => 'chargeback_rev1',
+            'originalOrderId' => 'order_abc123',
+            'reason' => 'fraud',
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseCount('vatly_chargebacks', 1);
+
+        $chargeback = Chargeback::where('vatly_id', 'chargeback_rev1')->firstOrFail();
+        $this->assertSame('won', $chargeback->status);
+        $this->assertTrue($chargeback->isReversed());
     }
 }
