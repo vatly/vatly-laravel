@@ -86,6 +86,19 @@ $checkout = $user->subscribe()
 
 return redirect($checkout->links->checkoutUrl->href);
 
+// Start it with a free trial — billing begins after the trial elapses.
+// Either set whole days…
+$user->subscribe()
+    ->toPlan('plan_premium')
+    ->withTrialDays(14)
+    ->create();
+
+// …or an end date (rounded up to whole days, so the trial never ends early):
+$user->subscribe()
+    ->toPlan('plan_premium')
+    ->withTrialEndsAt(now()->addMonth())
+    ->create();
+
 // One-off checkouts with explicit items
 $checkout = $user->checkout()->create(
     items: [['id' => 'plan_premium', 'quantity' => 1]],
@@ -189,6 +202,35 @@ See [docs/Webhooks.md](docs/Webhooks.md) for signature verification, retries, an
 ```bash
 composer test
 ```
+
+### Faking Vatly in your app's tests
+
+For feature tests that drive checkout/subscription flows, call `Vatly::fake()` — it binds a `FakeVatly` into the container, so every `subscribe()` / `checkout()` / `subscription()` call routes through recording fakes instead of the real API. Script only what you care about and assert against the returned fake (in the spirit of `Notification::fake()`), no hand-rolled Mockery stubs:
+
+```php
+use Vatly\Fluent\Testing\FakeCheckout;
+use Vatly\Laravel\Facades\Vatly;
+
+$vatly = Vatly::fake();
+
+// Optional: script the Checkout returned on subscription create
+$vatly->onSubscriptionCreate(
+    fn (string $planId) => FakeCheckout::make('https://checkout.vatly.test/chk_1'),
+);
+
+$this->actingAs($user)
+    ->post('/billing/subscribe', ['plan' => 'plan_pro'])
+    ->assertRedirect('https://checkout.vatly.test/chk_1');
+
+$vatly->assertSubscriptionCreated('plan_pro');
+$vatly->assertNothingCanceled();
+```
+
+Available assertions: `assertSubscriptionCreated`, `assertCheckoutCreated`, `assertSubscriptionSwapped`, `assertSubscriptionCanceled`, `assertNothingCanceled`, `assertNothingCreated`.
+
+`Vatly::fake()` lives on the `Vatly\Laravel\Facades\Vatly` facade — the package's single static-helper surface. The same facade proxies the composition root (`Vatly::order($order)`, `Vatly::subscription($subscription)`, …) and exposes the host-side helpers `Vatly::findBillable($vatlyCustomerId)`, `Vatly::findBillableOrFail($vatlyCustomerId)`, and `Vatly::cleanUp()`.
+
+### Faking the webhook API fetch
 
 For the `order.paid` webhook flow, the package fetches the full Order from the Vatly API to populate the tax breakdown. The actions are encapsulated by the `Vatly` composition root (not individually bound in the container), so swap one via reflection on the singleton:
 
