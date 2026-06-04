@@ -58,6 +58,7 @@ class EloquentRefundRepositoryTest extends BaseTestCase
             'total' => 9900,
             'subtotal' => 8182,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
     }
 }

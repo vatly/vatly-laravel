@@ -36,6 +36,7 @@ class EloquentSubscriptionRepository implements SubscriptionRepositoryInterface
             'quantity' => $data->quantity,
             'mandate_method' => $data->mandate?->method,
             'mandate_masked_identifier' => $data->mandate?->maskedIdentifier,
+            'testmode' => $data->testmode,
         ];
 
         if ($data->hostCustomerId !== null) {

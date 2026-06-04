@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('customer_id')->nullable()->index();
             $table->string('mandate_method')->nullable();
             $table->string('mandate_masked_identifier')->nullable();
+            $table->boolean('testmode');
             $table->timestamps();
         });
 
@@ -36,6 +37,7 @@ return new class extends Migration
             $table->string('invoice_number')->nullable();
             $table->string('payment_method')->nullable();
             $table->string('customer_id')->nullable()->index();
+            $table->boolean('testmode');
             $table->timestamps();
         });
 
@@ -68,6 +70,7 @@ return new class extends Migration
             $table->json('tax_summary')->nullable();
             $table->string('currency');
             $table->string('customer_id')->nullable()->index();
+            $table->boolean('testmode');
             $table->timestamps();
         });
 
@@ -83,6 +86,7 @@ return new class extends Migration
             $table->string('currency');
             $table->string('reason')->nullable();
             $table->string('customer_id')->nullable()->index();
+            $table->boolean('testmode');
             $table->timestamps();
         });
 

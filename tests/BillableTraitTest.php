@@ -67,6 +67,7 @@ class BillableTraitTest extends BaseTestCase
             'plan_id' => 'plan_basic',
             'name' => 'Basic',
             'quantity' => 1,
+            'testmode' => true,
         ]);
 
         $this->assertTrue($user->subscribed());
@@ -92,6 +93,7 @@ class BillableTraitTest extends BaseTestCase
             'plan_id' => 'plan_basic',
             'name' => 'Basic',
             'quantity' => 1,
+            'testmode' => true,
         ]);
 
         $handle = $user->subscription();
@@ -129,6 +131,7 @@ class BillableTraitTest extends BaseTestCase
             'status' => 'refunded',
             'total' => 9900,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
         // A refund owned by nobody (anonymous flow) must not leak in.
         Refund::create([
@@ -137,6 +140,7 @@ class BillableTraitTest extends BaseTestCase
             'status' => 'refunded',
             'total' => 100,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $this->assertCount(1, $user->refunds);
@@ -155,6 +159,7 @@ class BillableTraitTest extends BaseTestCase
             'status' => 'pending',
             'total' => 9900,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
         Chargeback::create([
             'vatly_id' => 'chargeback_orphan',
@@ -162,6 +167,7 @@ class BillableTraitTest extends BaseTestCase
             'status' => 'pending',
             'total' => 100,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $this->assertCount(1, $user->chargebacks);
@@ -210,6 +216,7 @@ class BillableTraitTest extends BaseTestCase
             'status' => 'paid',
             'total' => 9900,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $handle = $user->order('order_abc');
@@ -240,6 +247,7 @@ class BillableTraitTest extends BaseTestCase
             'status' => 'paid',
             'total' => 4900,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $this->expectException(InvalidOrderException::class);
@@ -258,6 +266,7 @@ class BillableTraitTest extends BaseTestCase
             'plan_id' => 'plan_basic',
             'name' => 'Basic',
             'quantity' => 1,
+            'testmode' => true,
         ]);
         Order::create([
             'vatly_id' => 'order_anon',
@@ -265,6 +274,7 @@ class BillableTraitTest extends BaseTestCase
             'status' => 'paid',
             'total' => 9900,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         // Unrelated row should not be touched.
@@ -274,6 +284,7 @@ class BillableTraitTest extends BaseTestCase
             'status' => 'paid',
             'total' => 100,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $user = User::factory()->create(['vatly_id' => null]);

@@ -41,6 +41,7 @@ class EloquentOrderRepository implements OrderRepositoryInterface
             'currency' => $data->currency,
             'invoice_number' => $data->invoiceNumber,
             'payment_method' => $data->paymentMethod,
+            'testmode' => $data->testmode,
         ];
 
         if ($data->hostCustomerId !== null) {

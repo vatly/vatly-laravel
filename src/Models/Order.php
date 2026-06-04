@@ -23,6 +23,7 @@ use Vatly\Fluent\Vatly;
  * @property string $currency
  * @property string|null $invoice_number
  * @property string|null $payment_method
+ * @property bool $testmode
  *
  * @method static create(array<string, mixed> $array)
  * @method static where(string $column, mixed $value)
@@ -38,6 +39,7 @@ class Order extends Model implements OrderInterface
      */
     protected $casts = [
         'tax_summary' => 'array',
+        'testmode' => 'boolean',
     ];
 
     /**
@@ -125,6 +127,11 @@ class Order extends Model implements OrderInterface
     public function isPaid(): bool
     {
         return $this->status === 'paid';
+    }
+
+    public function isTestmode(): bool
+    {
+        return (bool) $this->testmode;
     }
 
     /**

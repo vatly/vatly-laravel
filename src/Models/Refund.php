@@ -19,6 +19,7 @@ use Vatly\Fluent\Contracts\RefundInterface;
  * @property int|null $subtotal
  * @property array<int, array{taxRate: array{name: string, percentage: float, taxablePercentage: float}, amount: int, currency: string}>|null $tax_summary
  * @property string $currency
+ * @property bool $testmode
  *
  * @method static create(array<string, mixed> $array)
  * @method static where(string $column, mixed $value)
@@ -34,6 +35,7 @@ class Refund extends Model implements RefundInterface
      */
     protected $casts = [
         'tax_summary' => 'array',
+        'testmode' => 'boolean',
     ];
 
     /**
@@ -74,5 +76,10 @@ class Refund extends Model implements RefundInterface
     public function isCompleted(): bool
     {
         return $this->status === 'refunded';
+    }
+
+    public function isTestmode(): bool
+    {
+        return (bool) $this->testmode;
     }
 }

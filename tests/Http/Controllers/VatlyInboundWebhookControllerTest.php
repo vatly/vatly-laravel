@@ -461,6 +461,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'type' => 'default',
             'quantity' => 1,
             'ends_at' => null,
+            'testmode' => true,
         ]);
 
         $response = $this->postWebhookEvent('subscription.cancellation_grace_period_completed', 'sub_grace', 'subscription', [
@@ -494,6 +495,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'type' => 'default',
             'quantity' => 1,
             'ends_at' => '2026-02-01T00:00:00+00:00',
+            'testmode' => true,
         ]);
 
         $response = $this->postWebhookEvent('subscription.cancellation_grace_period_completed', 'sub_drift', 'subscription', [
@@ -522,6 +524,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'name' => 'Test Plan',
             'type' => 'default',
             'quantity' => 1,
+            'testmode' => true,
         ]);
 
         $response = $this->postWebhookEvent('subscription.canceled_immediately', 'sub_cancel', 'subscription', [
@@ -763,6 +766,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'subtotal' => 8182,
             'currency' => 'EUR',
             'reason' => 'fraud',
+            'testmode' => true,
         ]);
 
         $response = $this->postChargebackWebhook('order.chargeback_reversed', $this->buildApiChargeback([

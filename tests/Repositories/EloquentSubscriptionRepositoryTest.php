@@ -103,15 +103,18 @@ class EloquentSubscriptionRepositoryTest extends BaseTestCase
             planId: 'plan_basic',
             name: 'Basic',
             quantity: 1,
+            testmode: true,
             mandate: new Mandate('card', '4242'),
         ));
 
         $this->assertSame('card', $stored->getMandateMethod());
         $this->assertSame('4242', $stored->getMandateMaskedIdentifier());
+        $this->assertTrue($stored->isTestmode());
         $this->assertDatabaseHas('vatly_subscriptions', [
             'vatly_id' => 'subscription_with_mandate',
             'mandate_method' => 'card',
             'mandate_masked_identifier' => '4242',
+            'testmode' => true,
         ]);
     }
 
@@ -124,6 +127,7 @@ class EloquentSubscriptionRepositoryTest extends BaseTestCase
             planId: 'plan_basic',
             name: 'Basic',
             quantity: 1,
+            testmode: true,
         ));
 
         $this->assertNull($stored->getMandateMethod());
@@ -229,6 +233,7 @@ class EloquentSubscriptionRepositoryTest extends BaseTestCase
             'vatly_id' => 'subscription_'.bin2hex(random_bytes(8)),
             'name' => 'Test subscription',
             'quantity' => 1,
+            'testmode' => true,
         ], $overrides));
     }
 }
