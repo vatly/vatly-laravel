@@ -51,6 +51,7 @@ class OrderTest extends BaseTestCase
             'currency' => 'EUR',
             'invoice_number' => 'INV-2024-001',
             'payment_method' => 'credit_card',
+            'testmode' => true,
         ]);
 
         $this->assertSame('ord_test_123', $order->getVatlyId());
@@ -60,6 +61,31 @@ class OrderTest extends BaseTestCase
         $this->assertSame('INV-2024-001', $order->getInvoiceNumber());
         $this->assertSame('credit_card', $order->getPaymentMethod());
         $this->assertTrue($order->isPaid());
+        $this->assertTrue($order->isTestmode());
+    }
+
+    public function test_it_persists_testmode_and_casts_it_to_bool(): void
+    {
+        /** @var EloquentOrderRepository $repo */
+        $repo = $this->app->make(EloquentOrderRepository::class);
+
+        $repo->store(new StoreOrderData(
+            vatlyId: 'ord_live_1',
+            customerId: 'cus_1',
+            status: 'paid',
+            total: 9900,
+            currency: 'EUR',
+            testmode: false,
+        ));
+
+        $this->assertDatabaseHas('vatly_orders', [
+            'vatly_id' => 'ord_live_1',
+            'testmode' => false,
+        ]);
+
+        $order = Order::where('vatly_id', 'ord_live_1')->firstOrFail();
+        $this->assertIsBool($order->testmode);
+        $this->assertFalse($order->isTestmode());
     }
 
     public function test_it_has_a_morph_to_owner_relationship(): void
@@ -77,6 +103,7 @@ class OrderTest extends BaseTestCase
             'status' => 'paid',
             'total' => 4900,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $this->assertInstanceOf(User::class, $order->owner);
@@ -98,6 +125,7 @@ class OrderTest extends BaseTestCase
             'status' => 'paid',
             'total' => 9900,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         Order::create([
@@ -107,6 +135,7 @@ class OrderTest extends BaseTestCase
             'status' => 'paid',
             'total' => 4900,
             'currency' => 'USD',
+            'testmode' => true,
         ]);
 
         $this->assertCount(2, $user->orders);
@@ -126,6 +155,7 @@ class OrderTest extends BaseTestCase
             'status' => 'paid',
             'total' => 9900,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         Refund::create([
@@ -134,6 +164,7 @@ class OrderTest extends BaseTestCase
             'status' => 'refunded',
             'total' => 5000,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
         // A refund against a different order must not leak in.
         Refund::create([
@@ -142,6 +173,7 @@ class OrderTest extends BaseTestCase
             'status' => 'refunded',
             'total' => 100,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $order = Order::where('vatly_id', 'ord_refunds_1')->firstOrFail();
@@ -157,6 +189,7 @@ class OrderTest extends BaseTestCase
             'status' => 'paid',
             'total' => 9900,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         Chargeback::create([
@@ -165,6 +198,7 @@ class OrderTest extends BaseTestCase
             'status' => 'pending',
             'total' => 9900,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
         Chargeback::create([
             'vatly_id' => 'chargeback_other',
@@ -172,6 +206,7 @@ class OrderTest extends BaseTestCase
             'status' => 'pending',
             'total' => 100,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $order = Order::where('vatly_id', 'ord_cb_1')->firstOrFail();
@@ -187,6 +222,7 @@ class OrderTest extends BaseTestCase
             'status' => 'paid',
             'total' => 9900,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         OrderLine::create([
@@ -226,6 +262,7 @@ class OrderTest extends BaseTestCase
             status: 'paid',
             total: 9900,
             currency: 'EUR',
+            testmode: true,
             lines: [
                 new OrderLineData(
                     vatlyId: 'order_item_x',
@@ -259,6 +296,7 @@ class OrderTest extends BaseTestCase
             'total' => 12100,
             'subtotal' => 10000,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $this->fakeVatlyOrder($order, subtotal: '100.00', reversed: '40.00', refundable: '60.00');
@@ -280,6 +318,7 @@ class OrderTest extends BaseTestCase
             'total' => 12100,
             'subtotal' => 10000,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $this->fakeVatlyOrder($order, subtotal: '100.00', reversed: '100.00', refundable: '0.00');
@@ -299,6 +338,7 @@ class OrderTest extends BaseTestCase
             'total' => 12100,
             'subtotal' => 10000,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $this->fakeVatlyOrder($order, subtotal: '100.00', reversed: '0.00', refundable: '100.00');

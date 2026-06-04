@@ -166,6 +166,12 @@ $order->refundableSubtotal();                           // still-reversible subt
 // Static finders
 $user = User::findBillable('customer_xyz');             // ?User
 $user = User::findBillableOrFail('customer_xyz');       // User
+
+// Test vs live — each local record carries the mode it was created in,
+// stored in a `testmode` column and read back via the cast property /
+// `isTestmode()`. Use it to segregate test data and pick the matching API key.
+$order->testmode;                                       // bool (cast)
+$order->isTestmode();                                   // also on Subscription / Refund / Chargeback
 ```
 
 See [docs/Subscriptions.md](docs/Subscriptions.md) and [docs/Checkouts.md](docs/Checkouts.md) for the full surface.

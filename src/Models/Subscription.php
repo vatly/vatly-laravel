@@ -36,6 +36,7 @@ use Vatly\Fluent\Vatly;
  * @property string|null $mandate_masked_identifier Customer-facing identifier — card last 4, masked IBAN, etc.
  * @property Carbon|null $trial_ends_at
  * @property Carbon|null $ends_at
+ * @property bool $testmode
  *
  * @method static create(array<string, mixed> $array)
  * @method static where(string $column, mixed $value)
@@ -53,6 +54,7 @@ class Subscription extends Model implements SubscriptionInterface
     protected $casts = [
         'trial_ends_at' => 'datetime',
         'ends_at' => 'datetime',
+        'testmode' => 'boolean',
     ];
 
     /**
@@ -130,6 +132,11 @@ class Subscription extends Model implements SubscriptionInterface
     public function getMandateMaskedIdentifier(): ?string
     {
         return $this->mandate_masked_identifier;
+    }
+
+    public function isTestmode(): bool
+    {
+        return (bool) $this->testmode;
     }
 
     // --- Predicate aliases (active / canceled / onGracePeriod / valid / recurring / ended) ---

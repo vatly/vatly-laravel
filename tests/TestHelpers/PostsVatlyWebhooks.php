@@ -161,6 +161,7 @@ trait PostsVatlyWebhooks
         $subscription->name = $data['name'];
         $subscription->quantity = $data['quantity'];
         $subscription->mandate = $data['mandate'] ?? null;
+        $subscription->testmode = $data['testmode'] ?? true;
 
         return $subscription;
     }
@@ -294,6 +295,7 @@ trait PostsVatlyWebhooks
         $order->invoiceNumber = $data['invoiceNumber'];
         $order->paymentMethod = $data['paymentMethod'];
         $order->status = 'paid';
+        $order->testmode = $data['testmode'] ?? true;
         // The enriched API order carries its lines; default to none so callers
         // that don't exercise line persistence stay unaffected.
         $order->lines = array_map(
@@ -345,6 +347,7 @@ trait PostsVatlyWebhooks
         $refund->customerId = $data['customerId'];
         $refund->originalOrderId = $data['originalOrderId'];
         $refund->status = $data['status'];
+        $refund->testmode = $data['testmode'] ?? true;
         $refund->total = new Money($data['currency'], $data['totalValue']);
         $refund->subtotal = new Money($data['currency'], $data['subtotalValue']);
         $refund->taxSummary = new TaxSummaryCollection(array_map(
@@ -383,6 +386,7 @@ trait PostsVatlyWebhooks
         $chargeback->originalOrderId = $data['originalOrderId'];
         $chargeback->status = $data['status'];
         $chargeback->reason = $data['reason'] ?? '';
+        $chargeback->testmode = $data['testmode'] ?? true;
         $chargeback->total = new Money($data['currency'], $data['totalValue']);
         $chargeback->subtotal = new Money($data['currency'], $data['subtotalValue']);
         $chargeback->taxSummary = new TaxSummaryCollection(array_map(

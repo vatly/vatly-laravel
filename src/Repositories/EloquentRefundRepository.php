@@ -54,6 +54,7 @@ class EloquentRefundRepository implements RefundRepositoryInterface
             'subtotal' => $data->subtotal,
             'tax_summary' => $this->serializeTaxSummary($data->taxSummary),
             'currency' => $data->currency,
+            'testmode' => $data->testmode,
         ];
 
         if ($data->hostCustomerId !== null) {

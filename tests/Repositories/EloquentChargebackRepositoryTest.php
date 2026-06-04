@@ -35,16 +35,19 @@ class EloquentChargebackRepositoryTest extends BaseTestCase
             originalOrderId: 'order_1',
             reason: 'fraud',
             subtotal: 8182,
+            testmode: true,
         ));
 
         $this->assertNotNull($chargeback);
         $this->assertSame('chargeback_1', $chargeback->getVatlyId());
         $this->assertSame('fraud', $chargeback->getReason());
+        $this->assertTrue($chargeback->isTestmode());
         $this->assertDatabaseHas('vatly_chargebacks', [
             'vatly_id' => 'chargeback_1',
             'original_order_id' => 'order_1',
             'status' => 'pending',
             'reason' => 'fraud',
+            'testmode' => true,
         ]);
     }
 
@@ -57,6 +60,7 @@ class EloquentChargebackRepositoryTest extends BaseTestCase
             'status' => 'pending',
             'total' => 100,
             'currency' => 'EUR',
+            'testmode' => true,
         ]);
 
         $this->assertNotNull($this->repo->findByVatlyId('chargeback_find'));
@@ -115,6 +119,7 @@ class EloquentChargebackRepositoryTest extends BaseTestCase
             'subtotal' => 8182,
             'currency' => 'EUR',
             'reason' => 'fraud',
+            'testmode' => true,
         ]);
     }
 }

@@ -55,6 +55,7 @@ class EloquentChargebackRepository implements ChargebackRepositoryInterface
             'tax_summary' => $this->serializeTaxSummary($data->taxSummary),
             'currency' => $data->currency,
             'reason' => $data->reason,
+            'testmode' => $data->testmode,
         ];
 
         if ($data->hostCustomerId !== null) {

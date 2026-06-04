@@ -25,6 +25,7 @@ return new class extends Migration
             // renders avoid a per-request GetSubscription roundtrip.
             $table->string('mandate_method')->nullable();
             $table->string('mandate_masked_identifier')->nullable();
+            $table->boolean('testmode');
             $table->timestamps();
         });
     }

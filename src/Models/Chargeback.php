@@ -20,6 +20,7 @@ use Vatly\Fluent\Contracts\ChargebackInterface;
  * @property array<int, array{taxRate: array{name: string, percentage: float, taxablePercentage: float}, amount: int, currency: string}>|null $tax_summary
  * @property string $currency
  * @property string|null $reason
+ * @property bool $testmode
  *
  * @method static create(array<string, mixed> $array)
  * @method static where(string $column, mixed $value)
@@ -35,6 +36,7 @@ class Chargeback extends Model implements ChargebackInterface
      */
     protected $casts = [
         'tax_summary' => 'array',
+        'testmode' => 'boolean',
     ];
 
     /**
@@ -82,5 +84,10 @@ class Chargeback extends Model implements ChargebackInterface
         // Dispute lifecycle: pending, accepted, rejected, evidence_submitted,
         // won, lost. A reversal — funds returned to the merchant — is "won".
         return $this->status === 'won';
+    }
+
+    public function isTestmode(): bool
+    {
+        return (bool) $this->testmode;
     }
 }
