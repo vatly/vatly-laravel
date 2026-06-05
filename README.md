@@ -1,3 +1,5 @@
+![Vatly for Laravel](art/banner.png)
+
 # Vatly Laravel
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/vatly/vatly-laravel.svg?style=flat-square)](https://packagist.org/packages/vatly/vatly-laravel)
