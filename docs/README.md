@@ -1,3 +1,5 @@
+![Vatly for Laravel](https://raw.githubusercontent.com/Vatly/vatly-laravel/main/art/banner.png)
+
 # Getting Started
 
 Vatly Laravel provides a Cashier-like integration for [Vatly](https://vatly.com) billing in your Laravel application. It handles subscriptions, checkouts, customers, webhooks, and payment method updates.
