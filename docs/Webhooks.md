@@ -26,9 +26,9 @@ Exclude the webhook route from CSRF verification. In Laravel 11+, this is typica
 
 ## Events
 
-When a webhook is received, the driver's `LaravelEventDispatcher` forwards the typed domain events straight onto Laravel's event bus, so you listen for the DTO classes directly. The webhook event DTOs live in `vatly-api-php` under the `Vatly\API\Webhooks\Events\` namespace (so a payload change is a single api-php release); the exceptions are `SubscriptionWasCreatedFromWebhook` and `OrderWasCreatedFromWebhook`, internal fluent signals under `Vatly\Fluent\Events\`:
+When a webhook is received, the driver's `LaravelEventDispatcher` forwards the typed domain events straight onto Laravel's event bus, so you listen for the DTO classes directly. The webhook event DTOs live in `vatly-api-php` under the `Vatly\API\Webhooks\Events` namespace (so a payload change is a single api-php release); the exceptions are `SubscriptionWasCreatedFromWebhook` and `OrderWasCreatedFromWebhook`, internal fluent signals under `Vatly\Fluent\Events`:
 
-| Event (`Vatly\API\Webhooks\Events\…`) | Dispatched when |
+| Event (`Vatly\API\Webhooks\Events`) | Dispatched when |
 | --- | --- |
 | `SubscriptionStarted` | A `subscription.started` webhook is received |
 | `SubscriptionBillingUpdated` | A `subscription.billing_updated` webhook is received — the stored mandate is refreshed |
@@ -47,8 +47,8 @@ When a webhook is received, the driver's `LaravelEventDispatcher` forwards the t
 | `CheckoutExpired` | A `checkout.expired` webhook is received — the hosted checkout session timed out without completion |
 | `WebhookSetupReceived` | A `webhook.setup` verification call is received — Vatly confirms a newly registered (or re-pointed) endpoint is reachable. There's no resource to enrich and no local row to touch; just acknowledge with a `2xx`. Carries only the webhook envelope (`eventName` / `object`) |
 | `UnsupportedWebhookReceived` | A webhook arrives that has no typed mapping (carries the raw `eventName` / `object`) |
-| `SubscriptionWasCreatedFromWebhook` (in `Vatly\Fluent\Events\`) | A new local `Subscription` row was just created from a `subscription.started` webhook (application-level event; carries the stored `$subscription`) |
-| `OrderWasCreatedFromWebhook` (in `Vatly\Fluent\Events\`) | The order analogue of `SubscriptionWasCreatedFromWebhook`: a new local `Order` row was just created from an `order.paid` webhook (fires once on a brand-new order; carries the stored `$order`). A clean hook for receipts / fulfillment |
+| `SubscriptionWasCreatedFromWebhook` (in `Vatly\Fluent\Events`) | A new local `Subscription` row was just created from a `subscription.started` webhook (application-level event; carries the stored `$subscription`) |
+| `OrderWasCreatedFromWebhook` (in `Vatly\Fluent\Events`) | The order analogue of `SubscriptionWasCreatedFromWebhook`: a new local `Order` row was just created from an `order.paid` webhook (fires once on a brand-new order; carries the stored `$order`). A clean hook for receipts / fulfillment |
 
 **Money fields.** On the order and refund events (`OrderPaid`, `OrderPaymentFailed`, `RefundCompleted` / `RefundFailed` / `RefundCanceled`), `total` and `subtotal` are non-null `Vatly\API\Types\Money` value objects (a decimal-string `value` plus a `currency`); read the currency via `$event->total->currency` and minor units via `$event->total->toCents()`. These events no longer carry a standalone `currency` field. The chargeback events (`OrderChargebackReceived` / `OrderChargebackReversed`) carry nullable `?Money` `total` / `subtotal` and **keep** their standalone `currency` field.
 
@@ -56,7 +56,7 @@ Exactly one of the webhook events above is dispatched per incoming webhook (`Uns
 
 ## Built-in reactions
 
-Before the event is dispatched, the package keeps your local tables in sync automatically via fluent's standard webhook *reactions*. These are wired by `WebhookProcessorFactory` inside the `Vatly` composition root — no registration needed on your side. They live under `Vatly\Fluent\Webhooks\Reactions\`:
+Before the event is dispatched, the package keeps your local tables in sync automatically via fluent's standard webhook *reactions*. These are wired by `WebhookProcessorFactory` inside the `Vatly` composition root — no registration needed on your side. They live under `Vatly\Fluent\Webhooks\Reactions`:
 
 - **`SyncSubscriptionOnStarted`** -- On `SubscriptionStarted`, creates (or updates) the local `Subscription` row, then dispatches `SubscriptionWasCreatedFromWebhook` for newly-created rows.
 - **`CancelSubscriptionOnCanceled`** -- On `SubscriptionCanceledImmediately` / `SubscriptionCanceledWithGracePeriod`, sets the local subscription's `ends_at`.
