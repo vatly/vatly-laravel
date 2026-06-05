@@ -33,7 +33,7 @@ Full docs at [docs.vatly.com](https://docs.vatly.com). In this repo:
 ## Installation
 
 ```bash
-composer require vatly/vatly-laravel:v0.7.0-alpha.1
+composer require vatly/vatly-laravel:v0.7.0-alpha.3
 ```
 
 Pin to an exact version during alpha — the API will change.
