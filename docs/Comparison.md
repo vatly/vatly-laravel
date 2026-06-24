@@ -1,4 +1,4 @@
-# Comparison
+# Vs Cashier (Stripe, Paddle) & Lemon Squeezy
 
 Picking the billing layer for a new Laravel app? If you've reached for Laravel Cashier
 before, Vatly will feel immediately familiar — a `Billable` trait, `subscribed()`,
