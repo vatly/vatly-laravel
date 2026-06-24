@@ -1,5 +1,3 @@
-![Vatly for Laravel](https://raw.githubusercontent.com/Vatly/vatly-laravel/main/art/banner.png)
-
 # Side-by-side billing
 
 You don't swap a Merchant of Record overnight. The payment mandate for every active customer
