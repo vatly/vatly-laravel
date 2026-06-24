@@ -10,7 +10,7 @@
 
 A Cashier-style integration for [Vatly](https://vatly.com) in your Laravel application. Drop a `Billable` trait on your User model and you get subscriptions, checkouts, customer management, hosted billing update links, and a fully wired webhook endpoint — built around Eloquent and Laravel's IoC, events, and routing.
 
-If you've used Laravel Cashier for Stripe, this will feel familiar. Vatly handles Merchant of Record billing for EU SaaS, so you get a similar developer experience without managing VAT, invoicing, or payment compliance yourself.
+If you've used a Cashier-style billing package, this will feel familiar. Vatly handles Merchant of Record billing for EU SaaS, so you get a similar developer experience without managing VAT, invoicing, or payment compliance yourself.
 
 ## Documentation
 
@@ -23,6 +23,8 @@ Full docs at [docs.vatly.com](https://docs.vatly.com). In this repo:
 - [Subscriptions](docs/Subscriptions.md)
 - [Orders](docs/Orders.md)
 - [Webhooks](docs/Webhooks.md)
+- [How Vatly compares](docs/Comparison.md) — Vatly vs. other Laravel billing packages, for greenfield apps
+- [Running alongside another provider](docs/Coexisting-with-Cashier.md) — adding Vatly next to an existing Merchant of Record, side by side
 
 ## Requirements
 
@@ -77,6 +79,8 @@ Pin to an exact version during alpha — the API will change.
        use Billable;
    }
    ```
+
+   Already running another billing provider and migrating gradually? Reach for the `VatlyBillable` trait instead — it exposes the same surface under `vatly*`-prefixed names, so Vatly sits beside your existing biller without a trait collision. See [Running alongside another provider](docs/Coexisting-with-Cashier.md).
 
 ## Usage
 
