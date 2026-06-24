@@ -24,7 +24,7 @@ Full docs at [docs.vatly.com](https://docs.vatly.com). In this repo:
 - [Orders](docs/Orders.md)
 - [Webhooks](docs/Webhooks.md)
 - [How Vatly compares](docs/Comparison.md) — Vatly vs. other Laravel billing packages, for greenfield apps
-- [Migrating to Vatly](docs/Migrating-to-Vatly.md) — adding Vatly next to an existing Merchant of Record, side by side
+- [Migrating from Cashier](docs/Migrating-to-Vatly.md) — adding Vatly next to an existing Merchant of Record, side by side
 
 ## Requirements
 
@@ -80,7 +80,7 @@ Pin to an exact version during alpha — the API will change.
    }
    ```
 
-   Already running another billing provider and migrating gradually? Reach for the `VatlyBillable` trait instead — it exposes the same surface under `vatly*`-prefixed names, so Vatly sits beside your existing biller without a trait collision. See [Migrating to Vatly](docs/Migrating-to-Vatly.md).
+   Already running another billing provider and migrating gradually? Reach for the `VatlyBillable` trait instead — it exposes the same surface under `vatly*`-prefixed names, so Vatly sits beside your existing biller without a trait collision. See [Migrating from Cashier](docs/Migrating-to-Vatly.md).
 
 ## Usage
 
