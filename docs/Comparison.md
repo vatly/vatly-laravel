@@ -1,5 +1,3 @@
-![Vatly for Laravel](https://raw.githubusercontent.com/Vatly/vatly-laravel/main/art/banner.png)
-
 # Comparison
 
 Picking the billing layer for a new Laravel app? If you've reached for Laravel Cashier
