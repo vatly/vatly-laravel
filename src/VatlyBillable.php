@@ -18,16 +18,28 @@ use Vatly\Laravel\Models\Refund;
 use Vatly\Laravel\Models\Subscription;
 
 /**
- * Vatly billing capability for an Eloquent model.
+ * Vatly billing capability under `vatly*`-prefixed names — for running Vatly
+ * *beside* another Cashier-style biller on the same Eloquent model.
  *
- * Apply on your User/Tenant model when Vatly is your billing integration. The
- * trait exposes `subscribe`, `subscription`, `checkout`, `createAsVatlyCustomer`,
- * … — composing fluent's framework-agnostic surface with Eloquent queries.
+ * Laravel Cashier (Stripe and Paddle) and Lemon Squeezy for Laravel each ship a
+ * `Billable` trait that defines `subscribed()`, `subscription()`,
+ * `subscriptions()` and `checkout()` (Paddle and Lemon Squeezy also `subscribe()`;
+ * Lemon Squeezy also `orders()`). PHP forbids two traits defining the same method
+ * on one class, so {@see Billable} cannot sit next to one of those. This trait
+ * exposes the identical Vatly surface as `vatlySubscribed()`,
+ * `vatlySubscription()`, `vatlySubscribe()`, `vatlyCheckout()`, `vatlyOrder()` and
+ * the `vatly*` relations — so both billers coexist with no trait aliasing.
  *
- * Running Vatly *beside* another Cashier-style biller (Laravel Cashier for Stripe
- * or Paddle, or Lemon Squeezy for Laravel) on the same model? Use
- * {@see VatlyBillable} instead — it exposes the same capability under
- * `vatly*`-prefixed names so the two traits don't collide.
+ * Crucially, the state readers (`vatlySubscribed()` / `vatlySubscription()`) query
+ * this trait's own `vatlySubscriptions()` relation, never an unprefixed
+ * `subscriptions()` that the other biller owns — so there is no cross-wiring.
+ *
+ * Customer identity and claim helpers (`createAsVatlyCustomer()`,
+ * `claimVatlyCustomerFromReturn()`, `findBillable()`, …) already carry the Vatly
+ * name, don't collide, and are shared verbatim with {@see Billable} via
+ * {@see ManagesVatlyCustomer}.
+ *
+ * If Vatly is your *only* biller, use {@see Billable} (unprefixed) instead.
  *
  * @property string|null $vatly_id
  * @property string|null $email
@@ -38,16 +50,16 @@ use Vatly\Laravel\Models\Subscription;
  * @method mixed getKey()
  * @method string getMorphClass()
  */
-trait Billable
+trait VatlyBillable
 {
     use ManagesVatlyCustomer;
 
-    // --- Eloquent relations (Laravel-specific) ---
+    // --- Eloquent relations (vatly*-prefixed to avoid collisions) ---
 
     /**
      * @return MorphMany<Subscription>
      */
-    public function subscriptions(): MorphMany
+    public function vatlySubscriptions(): MorphMany
     {
         return $this->morphMany(Subscription::class, 'owner')->orderByDesc('created_at');
     }
@@ -55,7 +67,7 @@ trait Billable
     /**
      * @return MorphMany<Order>
      */
-    public function orders(): MorphMany
+    public function vatlyOrders(): MorphMany
     {
         return $this->morphMany(Order::class, 'owner')->orderByDesc('created_at');
     }
@@ -63,7 +75,7 @@ trait Billable
     /**
      * @return MorphMany<Refund>
      */
-    public function refunds(): MorphMany
+    public function vatlyRefunds(): MorphMany
     {
         return $this->morphMany(Refund::class, 'owner')->orderByDesc('created_at');
     }
@@ -71,37 +83,37 @@ trait Billable
     /**
      * @return MorphMany<Chargeback>
      */
-    public function chargebacks(): MorphMany
+    public function vatlyChargebacks(): MorphMany
     {
         return $this->morphMany(Chargeback::class, 'owner')->orderByDesc('created_at');
     }
 
-    // --- Subscription accessors ---
+    // --- Subscription accessors (vatly*-prefixed) ---
 
-    public function subscribe(): SubscriptionBuilder
+    public function vatlySubscribe(): SubscriptionBuilder
     {
         return app(Vatly::class)->subscriptionBuilder($this->customerProfile());
     }
 
-    public function subscribed(string $type = Subscription::DEFAULT_TYPE): bool
+    public function vatlySubscribed(string $type = Subscription::DEFAULT_TYPE): bool
     {
-        $subscription = $this->subscriptions()
+        $subscription = $this->vatlySubscriptions()
             ->where('type', $type)
             ->first();
 
         return $subscription !== null && $subscription->isActive();
     }
 
-    public function subscription(string $type = Subscription::DEFAULT_TYPE): ?SubscriptionHandle
+    public function vatlySubscription(string $type = Subscription::DEFAULT_TYPE): ?SubscriptionHandle
     {
-        $local = $this->subscriptions()
+        $local = $this->vatlySubscriptions()
             ->where('type', $type)
             ->first();
 
         return $local !== null ? app(Vatly::class)->subscription($local) : null;
     }
 
-    public function checkout(): CheckoutBuilder
+    public function vatlyCheckout(): CheckoutBuilder
     {
         return app(Vatly::class)->checkoutBuilder($this->customerProfile());
     }
@@ -109,9 +121,9 @@ trait Billable
     /**
      * @throws InvalidOrderException When no order with the given Vatly id exists for this owner.
      */
-    public function order(string $vatlyId): OrderHandle
+    public function vatlyOrder(string $vatlyId): OrderHandle
     {
-        $local = $this->orders()
+        $local = $this->vatlyOrders()
             ->where('vatly_id', $vatlyId)
             ->first();
 
