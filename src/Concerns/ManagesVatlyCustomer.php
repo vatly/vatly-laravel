@@ -128,6 +128,27 @@ trait ManagesVatlyCustomer
     }
 
     /**
+     * Update this entity's Vatly customer identity fields (`name`, `email`).
+     *
+     * Both are optional — pass whichever you want to change. Billing-address
+     * details (company name, tax id, street, …) are not editable here; send
+     * the customer through the hosted billing-update flow for those. The host ↔
+     * Vatly binding is unaffected.
+     *
+     * @param  array<string, mixed>  $attributes  Any of `name`, `email`.
+     *
+     * @throws NoVatlyCustomerException When this entity has no Vatly customer yet.
+     */
+    public function updateVatlyCustomer(array $attributes = []): Customer
+    {
+        if (! $this->hasVatlyId()) {
+            throw NoVatlyCustomerException::notYetCreated($this);
+        }
+
+        return app(Vatly::class)->customers()->update((string) $this->vatlyId(), $attributes);
+    }
+
+    /**
      * Claim an anonymous Vatly customer for this host entity.
      *
      * Use this on a user-signup hook when the user paid via guest checkout

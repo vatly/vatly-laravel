@@ -216,6 +216,8 @@ Events available:
 - `Vatly\API\Webhooks\Events\RefundCompleted` / `RefundFailed` / `RefundCanceled` — each with full `taxSummary`; persisted to `vatly_refunds` (see below).
 - `Vatly\API\Webhooks\Events\SubscriptionStarted`
 - `Vatly\API\Webhooks\Events\SubscriptionBillingUpdated` — the stored mandate (`mandate_method` / `mandate_masked_identifier`) is refreshed.
+- `Vatly\API\Webhooks\Events\SubscriptionUpdated` — an **immediate** plan/price/interval/quantity change; the local subscription's `plan_id`, `name` and `quantity` are refreshed from the payload (price is not stored locally).
+- `Vatly\API\Webhooks\Events\SubscriptionUpdateScheduled` — a change **scheduled** for the next billing cycle; the local row is left unchanged (the change hasn't applied yet). Dispatched only, exposing the target values via a typed `scheduledUpdate` (`Vatly\API\Types\ScheduledSubscriptionUpdate`) so you can, e.g., warn the customer of an upcoming price change.
 - `Vatly\API\Webhooks\Events\SubscriptionResumed` — the stored end date is cleared.
 - `Vatly\API\Webhooks\Events\SubscriptionCanceledImmediately`
 - `Vatly\API\Webhooks\Events\SubscriptionCanceledWithGracePeriod`
