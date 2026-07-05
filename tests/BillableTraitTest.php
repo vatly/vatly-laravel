@@ -7,13 +7,18 @@ namespace Vatly\Laravel\Tests;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
+use Vatly\API\Resources\Customer as ApiCustomer;
+use Vatly\API\VatlyApiClient;
 use Vatly\Fluent\Builders\CheckoutBuilder;
 use Vatly\Fluent\Builders\SubscriptionBuilder;
 use Vatly\Fluent\CustomerProfile;
+use Vatly\Fluent\CustomerService;
 use Vatly\Fluent\Exceptions\InvalidOrderException;
 use Vatly\Fluent\OrderHandle;
 use Vatly\Fluent\SubscriptionHandle;
 use Vatly\Fluent\Vatly;
+use Vatly\Laravel\Exceptions\NoVatlyCustomerException;
 use Vatly\Laravel\Models\Chargeback;
 use Vatly\Laravel\Models\Order;
 use Vatly\Laravel\Models\Refund;
@@ -313,5 +318,42 @@ class BillableTraitTest extends BaseTestCase
 
         $this->assertSame(0, $claimed);
         $this->assertSame('cus_unknown', $user->fresh()->vatly_id);
+    }
+
+    public function test_update_vatly_customer_delegates_to_the_customer_service(): void
+    {
+        $user = User::factory()->create(['vatly_id' => 'customer_xyz']);
+
+        $apiCustomer = new ApiCustomer(Mockery::mock(VatlyApiClient::class));
+        $apiCustomer->id = 'customer_xyz';
+        $apiCustomer->name = 'Renamed';
+        $apiCustomer->email = 'renamed@example.test';
+
+        $customers = Mockery::mock(CustomerService::class);
+        $customers->shouldReceive('update')
+            ->once()
+            ->with('customer_xyz', ['name' => 'Renamed', 'email' => 'renamed@example.test'])
+            ->andReturn($apiCustomer);
+
+        $vatly = Mockery::mock(Vatly::class);
+        $vatly->shouldReceive('customers')->andReturn($customers);
+        $this->app->instance(Vatly::class, $vatly);
+
+        $result = $user->updateVatlyCustomer([
+            'name' => 'Renamed',
+            'email' => 'renamed@example.test',
+        ]);
+
+        $this->assertSame($apiCustomer, $result);
+        $this->assertSame('Renamed', $result->name);
+    }
+
+    public function test_update_vatly_customer_throws_when_no_vatly_id(): void
+    {
+        $user = User::factory()->create(['vatly_id' => null]);
+
+        $this->expectException(NoVatlyCustomerException::class);
+
+        $user->updateVatlyCustomer(['name' => 'Whoever']);
     }
 }
