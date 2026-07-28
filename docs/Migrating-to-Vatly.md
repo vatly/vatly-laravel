@@ -12,11 +12,10 @@ integration ([Stripe](https://laravel.com/docs/12.x/billing) /
 [Lemon Squeezy](https://github.com/lmsqueezy/laravel)): the one thing you have to resolve, the
 things that *don't* need resolving, and the step-by-step.
 
-::note
-**Still deciding whether to switch?** Start with [How Vatly compares](Comparison.md) — the
-side-by-side on the Merchant-of-Record model, features, and what's on the roadmap. This page
-assumes you've decided to run Vatly alongside what you already have.
-::
+> [!NOTE]
+> **Still deciding whether to switch?** Start with [How Vatly compares](Comparison.md) — the
+> side-by-side on the Merchant-of-Record model, features, and what's on the roadmap. This page
+> assumes you've decided to run Vatly alongside what you already have.
 
 ---
 
@@ -38,24 +37,22 @@ PHP does not let two traits define the same method on one class — you get a fa
 *"trait method collision"* the moment you write `use LemonSqueezyBillable, VatlyBillable;`. So you
 have to decide, deliberately, **which provider owns the unprefixed method names**.
 
-::tip
-**The cleanest fix is often to not share a model at all.** None of these `Billable` traits is
-tied to `User` — they work on any Eloquent model (`Team`, `Account`, `Organization`, …), and
-Vatly's records are polymorphic (`owner_type` / `owner_id`). If your app bills a model that
-isn't already carrying a Cashier-style trait — or you can introduce one — put Vatly's `Billable`
-there and the collision disappears entirely. When both providers genuinely must live on the
-*same* model, read on.
-::
+> [!TIP]
+> **The cleanest fix is often to not share a model at all.** None of these `Billable` traits is
+> tied to `User` — they work on any Eloquent model (`Team`, `Account`, `Organization`, …), and
+> Vatly's records are polymorphic (`owner_type` / `owner_id`). If your app bills a model that
+> isn't already carrying a Cashier-style trait — or you can introduce one — put Vatly's `Billable`
+> there and the collision disappears entirely. When both providers genuinely must live on the
+> *same* model, read on.
 
-::warning
-**The self-call trap.** Plain trait aliasing (`insteadof` / `as`) is *not* enough here, and it
-fails quietly. Vatly's `subscription()` and `subscribed()` call `$this->subscriptions()`
-internally. If you alias `subscriptions` to the legacy provider with `insteadof`, then
-`vatlySubscription()` will read the *legacy* subscriptions table and silently return the wrong
-thing. Aliasing is safe only for the *builder* methods (`subscribe`, `checkout`) that don't
-self-call a relation; the *state readers* (`subscription`, `subscribed`) need their relation to
-stay wired to Vatly.
-::
+> [!WARNING]
+> **The self-call trap.** Plain trait aliasing (`insteadof` / `as`) is *not* enough here, and it
+> fails quietly. Vatly's `subscription()` and `subscribed()` call `$this->subscriptions()`
+> internally. If you alias `subscriptions` to the legacy provider with `insteadof`, then
+> `vatlySubscription()` will read the *legacy* subscriptions table and silently return the wrong
+> thing. Aliasing is safe only for the *builder* methods (`subscribe`, `checkout`) that don't
+> self-call a relation; the *state readers* (`subscription`, `subscribed`) need their relation to
+> stay wired to Vatly.
 
 Because of that trap, the recommended approach below uses Vatly's purpose-built `VatlyBillable`
 trait, which exposes the whole Vatly surface under `vatly*` names and owns its *own*
@@ -164,11 +161,10 @@ That's the whole integration step. Two things make it safe by construction:
   `findBillable()` — don't collide, so `VatlyBillable` and the standalone `Billable` share one
   tested implementation; a fix to the claim / re-attribution logic reaches both.
 
-::note
-**Vatly is your only biller?** Use the plain `Billable` trait instead (`subscribe()`,
-`subscribed()`, …) — see [Getting started](README.md). `VatlyBillable` exists purely for running
-beside another provider.
-::
+> [!NOTE]
+> **Vatly is your only biller?** Use the plain `Billable` trait instead (`subscribe()`,
+> `subscribed()`, …) — see [Getting started](README.md). `VatlyBillable` exists purely for running
+> beside another provider.
 
 <details>
 <summary>Under the hood — the equivalent hand-written concern</summary>
