@@ -13,11 +13,10 @@ Cashier-style packages you might otherwise reach for —
 [Laravel Cashier (Paddle)](https://laravel.com/docs/12.x/cashier-paddle), and
 [Lemon Squeezy for Laravel](https://github.com/lmsqueezy/laravel) — gaps included.
 
-::note
-**Already running one of these in an existing app?** This page helps you choose. Once you
-have, [Migrating from Cashier](Migrating-to-Vatly.md) shows how to add Vatly
-next to your current biller and migrate customers over gradually.
-::
+> [!NOTE]
+> **Already running one of these in an existing app?** This page helps you choose. Once you
+> have, [Migrating from Cashier](Migrating-to-Vatly.md) shows how to add Vatly
+> next to your current biller and migrate customers over gradually.
 
 ---
 
