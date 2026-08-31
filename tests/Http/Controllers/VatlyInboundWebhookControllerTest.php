@@ -7,11 +7,17 @@ namespace Vatly\Laravel\Tests\Http\Controllers;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Vatly\API\Types\Mandate;
 use Vatly\API\Webhooks\Events\CheckoutCanceled;
 use Vatly\API\Webhooks\Events\CheckoutExpired;
 use Vatly\API\Webhooks\Events\CheckoutFailed;
 use Vatly\API\Webhooks\Events\CheckoutPaid;
+use Vatly\API\Webhooks\Events\OneOffProductArchived;
+use Vatly\API\Webhooks\Events\OneOffProductUnarchived;
+use Vatly\API\Webhooks\Events\OneOffProductUpdateApproved;
+use Vatly\API\Webhooks\Events\OneOffProductUpdateRejected;
+use Vatly\API\Webhooks\Events\OneOffProductUpdateSubmitted;
 use Vatly\API\Webhooks\Events\OrderChargebackReceived;
 use Vatly\API\Webhooks\Events\OrderChargebackReversed;
 use Vatly\API\Webhooks\Events\OrderPaymentFailed;
@@ -19,8 +25,14 @@ use Vatly\API\Webhooks\Events\RefundCanceled;
 use Vatly\API\Webhooks\Events\RefundCompleted;
 use Vatly\API\Webhooks\Events\RefundFailed;
 use Vatly\API\Webhooks\Events\SubscriptionCancellationGracePeriodCompleted;
+use Vatly\API\Webhooks\Events\SubscriptionPlanArchived;
+use Vatly\API\Webhooks\Events\SubscriptionPlanUnarchived;
+use Vatly\API\Webhooks\Events\SubscriptionPlanUpdateApproved;
+use Vatly\API\Webhooks\Events\SubscriptionPlanUpdateRejected;
+use Vatly\API\Webhooks\Events\SubscriptionPlanUpdateSubmitted;
 use Vatly\API\Webhooks\Events\WebhookSetupReceived;
 use Vatly\Fluent\Events\OrderWasCreatedFromWebhook;
+use Vatly\Laravel\Events\LaravelEventDispatcher;
 use Vatly\Laravel\Models\Chargeback;
 use Vatly\Laravel\Models\Order;
 use Vatly\Laravel\Models\Refund;
@@ -789,5 +801,64 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         $chargeback = Chargeback::where('vatly_id', 'chargeback_rev1')->firstOrFail();
         $this->assertSame('won', $chargeback->status);
         $this->assertTrue($chargeback->isReversed());
+    }
+
+    /**
+     * The product-moderation webhooks (`one_off_product.*` and
+     * `subscription_plan.*`) carry no customer and touch no local table. The
+     * wrapper records every one in `vatly_webhook_calls` and forwards the typed
+     * event — hydrated from the fat payload by vatly-api-php's
+     * WebhookEventFactory — straight onto the event bus (pure passthrough via
+     * {@see LaravelEventDispatcher}).
+     *
+     * @return array<string, array{0: string, 1: string, 2: class-string, 3: string}>
+     */
+    public static function productEventProvider(): array
+    {
+        return [
+            'one_off_product.update_submitted' => ['one_off_product.update_submitted', 'one_off_product', OneOffProductUpdateSubmitted::class, 'oneOffProductId'],
+            'one_off_product.update_approved' => ['one_off_product.update_approved', 'one_off_product', OneOffProductUpdateApproved::class, 'oneOffProductId'],
+            'one_off_product.update_rejected' => ['one_off_product.update_rejected', 'one_off_product', OneOffProductUpdateRejected::class, 'oneOffProductId'],
+            'one_off_product.archived' => ['one_off_product.archived', 'one_off_product', OneOffProductArchived::class, 'oneOffProductId'],
+            'one_off_product.unarchived' => ['one_off_product.unarchived', 'one_off_product', OneOffProductUnarchived::class, 'oneOffProductId'],
+            'subscription_plan.update_submitted' => ['subscription_plan.update_submitted', 'subscription_plan', SubscriptionPlanUpdateSubmitted::class, 'subscriptionPlanId'],
+            'subscription_plan.update_approved' => ['subscription_plan.update_approved', 'subscription_plan', SubscriptionPlanUpdateApproved::class, 'subscriptionPlanId'],
+            'subscription_plan.update_rejected' => ['subscription_plan.update_rejected', 'subscription_plan', SubscriptionPlanUpdateRejected::class, 'subscriptionPlanId'],
+            'subscription_plan.archived' => ['subscription_plan.archived', 'subscription_plan', SubscriptionPlanArchived::class, 'subscriptionPlanId'],
+            'subscription_plan.unarchived' => ['subscription_plan.unarchived', 'subscription_plan', SubscriptionPlanUnarchived::class, 'subscriptionPlanId'],
+        ];
+    }
+
+    /**
+     * @param  class-string  $eventClass
+     */
+    #[DataProvider('productEventProvider')]
+    public function test_it_stores_and_dispatches_typed_product_events(string $eventName, string $entityType, string $eventClass, string $idProperty): void
+    {
+        Event::fake([$eventClass]);
+
+        $entityId = $entityType.'_Vr8kQdFhSrG4Y3DnfsdqH';
+
+        $this->postWebhookEvent($eventName, $entityId, $entityType, [
+            'id' => $entityId,
+            'resource' => $entityType,
+            'testmode' => true,
+            'name' => 'Premium License',
+            'pendingUpdates' => ['name' => 'Premium License v2'],
+            'updateStatus' => 'pending',
+        ])->assertStatus(201);
+
+        $this->assertDatabaseHas('vatly_webhook_calls', [
+            'event_name' => $eventName,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'vatly_customer_id' => null,
+        ]);
+
+        Event::assertDispatched(
+            $eventClass,
+            fn (object $event): bool => $event->{$idProperty} === $entityId
+                && $event->testmode === true,
+        );
     }
 }
