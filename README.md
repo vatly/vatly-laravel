@@ -223,7 +223,7 @@ Events available:
 - `Vatly\API\Webhooks\Events\SubscriptionCanceledWithGracePeriod`
 - `Vatly\API\Webhooks\Events\SubscriptionCancellationGracePeriodCompleted` — the grace period set at cancellation has elapsed; carries `customerId`, `subscriptionId`, `endsAt`. The local subscription's `ends_at` is stamped to the actual end (self-healing a missed `subscription.canceled_with_grace_period` webhook and correcting any drift); also dispatched so you can flip your own application-level "fully ended" state without polling.
 - `Vatly\API\Webhooks\Events\WebhookSetupReceived` — a `webhook.setup` endpoint-verification call; no resource to enrich and no local row to touch, just acknowledge with a `2xx`.
-- `Vatly\API\Webhooks\Events\UnsupportedWebhookReceived`
+- `Vatly\API\Webhooks\Events\UnsupportedWebhookReceived` — the fallback for any event with no typed mapping. The catalogue-moderation events (`one_off_product.update_submitted` / `update_approved` / `update_rejected` / `archived` / `unarchived` and the `subscription_plan.*` equivalents) currently land here — they're recorded in `vatly_webhook_calls` and dispatched, but carry no customer and touch no local table (match on `$event->eventName`). See [docs/Webhooks.md](docs/Webhooks.md#catalogue-moderation-events).
 - `Vatly\Fluent\Events\SubscriptionWasCreatedFromWebhook` — internal fluent signal (not a webhook payload).
 - `Vatly\Fluent\Events\OrderWasCreatedFromWebhook` — the order analogue of `SubscriptionWasCreatedFromWebhook`: an internal fluent signal that fires once when a brand-new local `Order` row is created from an `order.paid` webhook. A clean hook for receipts / fulfillment.
 

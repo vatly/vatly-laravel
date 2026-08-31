@@ -48,7 +48,41 @@ When a webhook is received, the driver's `LaravelEventDispatcher` forwards the t
 | `CheckoutCanceled` | A `checkout.canceled` webhook is received — the customer abandoned the hosted checkout (cart-abandonment hook) |
 | `CheckoutExpired` | A `checkout.expired` webhook is received — the hosted checkout session timed out without completion |
 | `WebhookSetupReceived` | A `webhook.setup` verification call is received — Vatly confirms a newly registered (or re-pointed) endpoint is reachable. There's no resource to enrich and no local row to touch; just acknowledge with a `2xx`. Carries only the webhook envelope (`eventName` / `object`) |
-| `UnsupportedWebhookReceived` | A webhook arrives that has no typed mapping (carries the raw `eventName` / `object`) |
+| `UnsupportedWebhookReceived` | A webhook arrives that has no typed mapping (carries the raw `eventName` / `object`). This is also where the **catalogue-moderation events** currently land — see below |
+
+### Catalogue-moderation events
+
+Vatly emits ten catalogue events for the one-off-product and subscription-plan approval workflow. Their `object` is the full `OneOffProduct` / `SubscriptionPlan` resource, carrying `pendingUpdates` (the proposed changes) and `updateStatus` (`pending` while an edit awaits approval, back to `null` once it's approved or rejected):
+
+| `eventName` | Meaning |
+| --- | --- |
+| `one_off_product.update_submitted` | An edit to a one-off product was submitted for approval — `object.pendingUpdates` holds the proposed values, `object.updateStatus: pending` |
+| `one_off_product.update_approved` | A submitted edit was approved and applied — `object.pendingUpdates: null` |
+| `one_off_product.update_rejected` | A submitted edit was rejected — the product is unchanged, `object.pendingUpdates: null` |
+| `one_off_product.archived` | A one-off product was archived (`object.archivedAt` set) |
+| `one_off_product.unarchived` | A previously archived one-off product was restored |
+| `subscription_plan.update_submitted` | An edit to a subscription plan was submitted for approval |
+| `subscription_plan.update_approved` | A submitted plan edit was approved and applied |
+| `subscription_plan.update_rejected` | A submitted plan edit was rejected |
+| `subscription_plan.archived` | A subscription plan was archived |
+| `subscription_plan.unarchived` | A previously archived subscription plan was restored |
+
+These are catalogue-management signals, not billing events: they carry no customer and there is no local row for the package to keep in sync, so **no built-in reaction touches them**. They are still fully received — signature-verified, recorded in `vatly_webhook_calls` (with `entity_type` `one_off_product` / `subscription_plan` and `vatly_customer_id` `null`), and dispatched onto the event bus — so you can drive your own cache-busting or catalogue-mirroring off them.
+
+They currently arrive as `UnsupportedWebhookReceived` (matched on `$event->eventName`), because the typed DTO + `eventName → class` mapping for them lives in `vatly-api-php`'s `WebhookEventFactory` and has not shipped there yet. Once a `vatly-api-php` release adds typed classes for these events, they'll dispatch as those types automatically — no change needed in your application beyond switching the class you listen for.
+
+```php
+use Illuminate\Support\Facades\Event;
+use Vatly\API\Webhooks\Events\UnsupportedWebhookReceived;
+
+Event::listen(UnsupportedWebhookReceived::class, function (UnsupportedWebhookReceived $event) {
+    if ($event->eventName === 'subscription_plan.update_approved') {
+        // $event->entityId               // e.g. "subscription_plan_7Hd9Kf2Lm"
+        // $event->object['pendingUpdates']  // null once approved
+        // Bust your local plan cache, re-pull the catalogue, etc.
+    }
+});
+```
 | `SubscriptionWasCreatedFromWebhook` (in `Vatly\Fluent\Events\`) | A new local `Subscription` row was just created from a `subscription.started` webhook (application-level event; carries the stored `$subscription`) |
 | `OrderWasCreatedFromWebhook` (in `Vatly\Fluent\Events\`) | The order analogue of `SubscriptionWasCreatedFromWebhook`: a new local `Order` row was just created from an `order.paid` webhook (fires once on a brand-new order; carries the stored `$order`). A clean hook for receipts / fulfillment |
 

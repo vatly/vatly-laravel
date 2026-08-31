@@ -7,6 +7,7 @@ namespace Vatly\Laravel\Tests\Http\Controllers;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Vatly\API\Types\Mandate;
 use Vatly\API\Webhooks\Events\CheckoutCanceled;
 use Vatly\API\Webhooks\Events\CheckoutExpired;
@@ -19,6 +20,7 @@ use Vatly\API\Webhooks\Events\RefundCanceled;
 use Vatly\API\Webhooks\Events\RefundCompleted;
 use Vatly\API\Webhooks\Events\RefundFailed;
 use Vatly\API\Webhooks\Events\SubscriptionCancellationGracePeriodCompleted;
+use Vatly\API\Webhooks\Events\UnsupportedWebhookReceived;
 use Vatly\API\Webhooks\Events\WebhookSetupReceived;
 use Vatly\Fluent\Events\OrderWasCreatedFromWebhook;
 use Vatly\Laravel\Models\Chargeback;
@@ -789,5 +791,65 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         $chargeback = Chargeback::where('vatly_id', 'chargeback_rev1')->firstOrFail();
         $this->assertSame('won', $chargeback->status);
         $this->assertTrue($chargeback->isReversed());
+    }
+
+    /**
+     * The catalogue-moderation webhooks (`one_off_product.*` and
+     * `subscription_plan.*`, added to the WebhookEvent enum after 2026-07)
+     * carry no customer and touch no local table. The wrapper still records
+     * every one in `vatly_webhook_calls` and forwards it onto the event bus.
+     *
+     * They currently surface as {@see UnsupportedWebhookReceived}: they have no
+     * typed DTO in vatly-api-php's WebhookEventFactory yet, so the factory's
+     * default branch maps them. When api-php ships typed catalogue DTOs this
+     * assertion is the canary that flips — swap it for the typed event and add
+     * a reaction if one is warranted.
+     *
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function catalogueEventProvider(): array
+    {
+        return [
+            'one_off_product.update_submitted' => ['one_off_product.update_submitted', 'one_off_product'],
+            'one_off_product.update_approved' => ['one_off_product.update_approved', 'one_off_product'],
+            'one_off_product.update_rejected' => ['one_off_product.update_rejected', 'one_off_product'],
+            'one_off_product.archived' => ['one_off_product.archived', 'one_off_product'],
+            'one_off_product.unarchived' => ['one_off_product.unarchived', 'one_off_product'],
+            'subscription_plan.update_submitted' => ['subscription_plan.update_submitted', 'subscription_plan'],
+            'subscription_plan.update_approved' => ['subscription_plan.update_approved', 'subscription_plan'],
+            'subscription_plan.update_rejected' => ['subscription_plan.update_rejected', 'subscription_plan'],
+            'subscription_plan.archived' => ['subscription_plan.archived', 'subscription_plan'],
+            'subscription_plan.unarchived' => ['subscription_plan.unarchived', 'subscription_plan'],
+        ];
+    }
+
+    #[DataProvider('catalogueEventProvider')]
+    public function test_it_stores_and_dispatches_catalogue_events(string $eventName, string $entityType): void
+    {
+        Event::fake([UnsupportedWebhookReceived::class]);
+
+        $entityId = $entityType.'_Vr8kQdFhSrG4Y3DnfsdqH';
+
+        $this->postWebhookEvent($eventName, $entityId, $entityType, [
+            'id' => $entityId,
+            'resource' => $entityType,
+            'name' => 'Premium License',
+            'pendingUpdates' => ['name' => 'Premium License v2'],
+            'updateStatus' => 'pending',
+        ])->assertStatus(201);
+
+        $this->assertDatabaseHas('vatly_webhook_calls', [
+            'event_name' => $eventName,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'vatly_customer_id' => null,
+        ]);
+
+        Event::assertDispatched(
+            UnsupportedWebhookReceived::class,
+            fn (UnsupportedWebhookReceived $event): bool => $event->eventName === $eventName
+                && $event->entityType === $entityType
+                && $event->entityId === $entityId,
+        );
     }
 }
