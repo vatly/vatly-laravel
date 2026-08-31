@@ -98,7 +98,7 @@ $user->subscription()->swap('subscription_plan_annual', [
 However the swap is applied, Vatly confirms the outcome over webhooks, and the package keeps the local `plan_id` / `name` / `quantity` in step:
 
 - An **immediate** change (`applyImmediately: true`) raises a `subscription.updated` webhook → the `SubscriptionUpdated` event; the local plan/name/quantity are refreshed.
-- A change **scheduled for the next cycle** (`applyImmediately: false`) raises a `subscription.update_scheduled` webhook → the `SubscriptionUpdateScheduled` event. Nothing changes locally yet; the target values ride in the event's `scheduledUpdate`, and the eventual switch arrives as a later `subscription.updated`.
+- A change **scheduled for the next cycle** (`applyImmediately: false`) raises a `subscription.update_scheduled` webhook → the `SubscriptionUpdateScheduled` event. Nothing changes locally yet; the target values ride in the event's `scheduledUpdate` (a typed `Vatly\API\Types\ScheduledSubscriptionUpdate` exposing `subscriptionPlanId`, `name`, `description`, `basePrice`, `quantity`, `interval`, `intervalCount` and `effectiveAt` — the timestamp the change takes effect), and the eventual switch arrives as a later `subscription.updated`.
 
 See [Webhooks](Webhooks.md) for the full event list.
 
