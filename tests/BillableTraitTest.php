@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Vatly\API\Resources\Customer as ApiCustomer;
+use Vatly\API\Types\PortalSession;
 use Vatly\API\VatlyApiClient;
 use Vatly\Fluent\Builders\CheckoutBuilder;
 use Vatly\Fluent\Builders\SubscriptionBuilder;
+use Vatly\Fluent\CustomerHandle;
 use Vatly\Fluent\CustomerProfile;
 use Vatly\Fluent\CustomerService;
 use Vatly\Fluent\Exceptions\InvalidOrderException;
@@ -355,5 +357,66 @@ class BillableTraitTest extends BaseTestCase
         $this->expectException(NoVatlyCustomerException::class);
 
         $user->updateVatlyCustomer(['name' => 'Whoever']);
+    }
+
+    public function test_vatly_portal_url_returns_the_hosted_portal_session_url(): void
+    {
+        $user = User::factory()->create(['vatly_id' => 'customer_xyz']);
+
+        $session = new PortalSession(
+            url: 'https://portal.vatly.com/session/abc123',
+            expiresAt: '2026-01-01T00:15:00Z',
+            returnUrl: 'https://app.test/account',
+        );
+
+        $handle = Mockery::mock(CustomerHandle::class);
+        $handle->shouldReceive('portalSession')
+            ->once()
+            ->with(['returnUrl' => 'https://app.test/account'])
+            ->andReturn($session);
+
+        $vatly = Mockery::mock(Vatly::class);
+        $vatly->shouldReceive('customer')
+            ->once()
+            ->with('customer_xyz')
+            ->andReturn($handle);
+        $this->app->instance(Vatly::class, $vatly);
+
+        $url = $user->vatlyPortalUrl('https://app.test/account');
+
+        $this->assertSame('https://portal.vatly.com/session/abc123', $url);
+    }
+
+    public function test_vatly_portal_session_omits_return_url_when_not_given(): void
+    {
+        $user = User::factory()->create(['vatly_id' => 'customer_xyz']);
+
+        $session = new PortalSession(
+            url: 'https://portal.vatly.com/session/abc123',
+            expiresAt: '2026-01-01T00:15:00Z',
+        );
+
+        $handle = Mockery::mock(CustomerHandle::class);
+        $handle->shouldReceive('portalSession')
+            ->once()
+            ->with([])
+            ->andReturn($session);
+
+        $vatly = Mockery::mock(Vatly::class);
+        $vatly->shouldReceive('customer')->once()->with('customer_xyz')->andReturn($handle);
+        $this->app->instance(Vatly::class, $vatly);
+
+        $result = $user->vatlyPortalSession();
+
+        $this->assertSame($session, $result);
+    }
+
+    public function test_vatly_portal_url_throws_when_no_vatly_id(): void
+    {
+        $user = User::factory()->create(['vatly_id' => null]);
+
+        $this->expectException(NoVatlyCustomerException::class);
+
+        $user->vatlyPortalUrl();
     }
 }

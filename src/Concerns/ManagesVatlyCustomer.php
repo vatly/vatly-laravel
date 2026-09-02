@@ -6,6 +6,7 @@ namespace Vatly\Laravel\Concerns;
 
 use Illuminate\Http\Request;
 use Vatly\API\Resources\Customer;
+use Vatly\API\Types\PortalSession;
 use Vatly\Fluent\CustomerProfile;
 use Vatly\Fluent\Exceptions\CustomerAlreadyBoundException;
 use Vatly\Fluent\Vatly;
@@ -146,6 +147,53 @@ trait ManagesVatlyCustomer
         }
 
         return app(Vatly::class)->customers()->update((string) $this->vatlyId(), $attributes);
+    }
+
+    // --- Hosted customer portal ---
+
+    /**
+     * Open a short-lived, single-use hosted customer-portal session for this
+     * entity's Vatly customer.
+     *
+     * The customer manages their own billing there — payment method, invoices,
+     * subscription self-service. The returned {@see PortalSession} carries the
+     * entry `url` (redirect the browser to it) and its `expiresAt`. The link is
+     * locked to this customer, expires after roughly 15 minutes and can be used
+     * once — it is credential-bearing, so never cache or log it.
+     *
+     * Pass a `$returnUrl` (absolute HTTPS) to render a "back to your app" link in
+     * the portal. For most flows reach for {@see self::vatlyPortalUrl()} instead;
+     * this returns the full session when you also need `expiresAt`.
+     *
+     * @throws NoVatlyCustomerException When this entity has no Vatly customer yet.
+     */
+    public function vatlyPortalSession(?string $returnUrl = null): PortalSession
+    {
+        if (! $this->hasVatlyId()) {
+            throw NoVatlyCustomerException::notYetCreated($this);
+        }
+
+        $options = $returnUrl !== null ? ['returnUrl' => $returnUrl] : [];
+
+        return app(Vatly::class)
+            ->customer((string) $this->vatlyId())
+            ->portalSession($options);
+    }
+
+    /**
+     * The single-use hosted customer-portal URL for this entity — the one-liner
+     * for `return redirect($user->vatlyPortalUrl());`.
+     *
+     * Convenience wrapper over {@see self::vatlyPortalSession()} that returns just
+     * the entry `url`. The same single-use / ~15-minute / do-not-cache rules
+     * apply. Pass a `$returnUrl` (absolute HTTPS) to render a return link in the
+     * portal.
+     *
+     * @throws NoVatlyCustomerException When this entity has no Vatly customer yet.
+     */
+    public function vatlyPortalUrl(?string $returnUrl = null): string
+    {
+        return $this->vatlyPortalSession($returnUrl)->url;
     }
 
     /**

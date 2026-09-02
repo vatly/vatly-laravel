@@ -33,6 +33,7 @@ use Vatly\Laravel\VatlyConfig;
  * @method static \Vatly\Fluent\Builders\CheckoutBuilder checkoutBuilder(\Vatly\Fluent\CustomerProfile $profile)
  * @method static \Vatly\Fluent\Builders\SubscriptionBuilder subscriptionBuilder(\Vatly\Fluent\CustomerProfile $profile)
  * @method static \Vatly\Fluent\CustomerService customers()
+ * @method static \Vatly\Fluent\CustomerHandle customer(string $vatlyCustomerId)
  * @method static ?string customerIdFromCheckout(string $checkoutId)
  * @method static bool claimCustomerFromCheckout(string $checkoutId, string $hostCustomerId)
  * @method static \Vatly\Fluent\Webhooks\WebhookProcessor webhookProcessor()
