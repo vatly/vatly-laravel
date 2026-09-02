@@ -92,6 +92,7 @@ class VatlyServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations/create_vatly_order_lines_table.php.stub' => $this->getMigrationFileName('create_vatly_order_lines_table.php'),
             __DIR__.'/../database/migrations/create_vatly_refunds_table.php.stub' => $this->getMigrationFileName('create_vatly_refunds_table.php'),
             __DIR__.'/../database/migrations/create_vatly_chargebacks_table.php.stub' => $this->getMigrationFileName('create_vatly_chargebacks_table.php'),
+            __DIR__.'/../database/migrations/add_cancellation_reason_to_vatly_subscriptions_table.php.stub' => $this->getMigrationFileName('add_cancellation_reason_to_vatly_subscriptions_table.php'),
         ], 'vatly-migrations');
     }
 

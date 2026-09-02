@@ -94,6 +94,32 @@ class EloquentSubscriptionRepositoryTest extends BaseTestCase
         $this->assertSame('plan_premium', $subscription->fresh()->plan_id);
     }
 
+    public function test_update_persists_the_cancellation_reason_when_present(): void
+    {
+        $subscription = $this->makeSubscription(['cancellation_reason' => null]);
+
+        $this->repo->update($subscription, new UpdateSubscriptionData(
+            endsAt: CarbonImmutable::parse('2026-06-01T00:00:00+00:00'),
+            cancellationReason: 'payment_failure',
+        ));
+
+        $this->assertSame('payment_failure', $subscription->fresh()->cancellation_reason);
+    }
+
+    public function test_update_leaves_the_cancellation_reason_alone_when_null(): void
+    {
+        // Null cancellationReason means "no change" — mirrors the status /
+        // mandate no-op conventions — so an unrelated update must not wipe a
+        // reason a prior cancellation stamped.
+        $subscription = $this->makeSubscription(['cancellation_reason' => 'merchant_request']);
+
+        $this->repo->update($subscription, new UpdateSubscriptionData(
+            planId: 'plan_premium',
+        ));
+
+        $this->assertSame('merchant_request', $subscription->fresh()->cancellation_reason);
+    }
+
     public function test_store_persists_mandate_fields_when_present(): void
     {
         $stored = $this->repo->store(new StoreSubscriptionData(

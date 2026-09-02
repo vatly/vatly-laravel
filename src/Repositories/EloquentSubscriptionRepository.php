@@ -65,6 +65,12 @@ class EloquentSubscriptionRepository implements SubscriptionRepositoryInterface
             } elseif ($data->clearEndsAt) {
                 $subscription->ends_at = null;
             }
+            // Why the subscription was canceled (payment_failure / merchant_request
+            // / customer_request), set by the cancellation webhook reactions. Null
+            // means "no change", mirroring the status convention on the DTO.
+            if ($data->cancellationReason !== null) {
+                $subscription->cancellation_reason = $data->cancellationReason;
+            }
             // Mandate is an atomic value object: a non-null Mandate replaces
             // both columns in one write (preventing mixed local state like
             // "paypal / 4242" when switching from a card mandate to a paypal

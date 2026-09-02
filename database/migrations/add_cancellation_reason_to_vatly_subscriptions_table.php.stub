@@ -1,0 +1,49 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * Adds the `cancellation_reason` column to an existing installation's
+     * `vatly_subscriptions` table. Guarded so it is a safe no-op on a fresh
+     * install where the create migration already defines the column (order of
+     * same-timestamp published migrations is not guaranteed).
+     */
+    public function up(): void
+    {
+        if (! Schema::hasTable('vatly_subscriptions')) {
+            return;
+        }
+
+        if (Schema::hasColumn('vatly_subscriptions', 'cancellation_reason')) {
+            return;
+        }
+
+        Schema::table('vatly_subscriptions', function (Blueprint $table) {
+            $table->string('cancellation_reason')->nullable()->after('ends_at');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        if (! Schema::hasTable('vatly_subscriptions')) {
+            return;
+        }
+
+        if (! Schema::hasColumn('vatly_subscriptions', 'cancellation_reason')) {
+            return;
+        }
+
+        Schema::table('vatly_subscriptions', function (Blueprint $table) {
+            $table->dropColumn('cancellation_reason');
+        });
+    }
+};
