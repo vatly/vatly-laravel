@@ -24,6 +24,7 @@ use Vatly\API\Webhooks\Events\OrderPaymentFailed;
 use Vatly\API\Webhooks\Events\RefundCanceled;
 use Vatly\API\Webhooks\Events\RefundCompleted;
 use Vatly\API\Webhooks\Events\RefundFailed;
+use Vatly\API\Webhooks\Events\SubscriptionCanceledForNonpayment;
 use Vatly\API\Webhooks\Events\SubscriptionCancellationGracePeriodCompleted;
 use Vatly\API\Webhooks\Events\SubscriptionPlanArchived;
 use Vatly\API\Webhooks\Events\SubscriptionPlanUnarchived;
@@ -546,6 +547,45 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         $response->assertStatus(201);
         $subscription = Subscription::where('vatly_id', 'sub_cancel')->first();
         $this->assertTrue($subscription->isCancelled());
+    }
+
+    public function test_it_cancels_a_subscription_for_nonpayment_from_webhook(): void
+    {
+        Event::fake([SubscriptionCanceledForNonpayment::class]);
+
+        $user = User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        Subscription::create([
+            'owner_type' => $user->getMorphClass(),
+            'owner_id' => $user->getKey(),
+            'vatly_id' => 'sub_nonpay',
+            'plan_id' => 'plan_foo',
+            'name' => 'Test Plan',
+            'type' => 'default',
+            'quantity' => 1,
+            'testmode' => true,
+        ]);
+
+        // A hard cancellation after payment recovery is exhausted — carries
+        // cancellationReason: payment_failure and ends the local subscription
+        // exactly like subscription.canceled_immediately.
+        $response = $this->postWebhookEvent('subscription.canceled_for_nonpayment', 'sub_nonpay', 'subscription', [
+            'customerId' => 'customer_abc',
+            'cancellationReason' => 'payment_failure',
+        ]);
+
+        $response->assertStatus(201);
+
+        $subscription = Subscription::where('vatly_id', 'sub_nonpay')->first();
+        $this->assertTrue($subscription->isCancelled());
+        $this->assertNotNull($subscription->ends_at);
+
+        Event::assertDispatched(
+            SubscriptionCanceledForNonpayment::class,
+            fn (SubscriptionCanceledForNonpayment $event): bool => $event->subscriptionId === 'sub_nonpay'
+                && $event->customerId === 'customer_abc'
+                && $event->cancellationReason === 'payment_failure',
+        );
     }
 
     public function test_it_persists_a_refund_from_webhook(): void
