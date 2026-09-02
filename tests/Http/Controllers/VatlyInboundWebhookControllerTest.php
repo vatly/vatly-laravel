@@ -542,11 +542,39 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
 
         $response = $this->postWebhookEvent('subscription.canceled_immediately', 'sub_cancel', 'subscription', [
             'customerId' => 'customer_abc',
+            'cancellationReason' => 'merchant_request',
         ]);
 
         $response->assertStatus(201);
         $subscription = Subscription::where('vatly_id', 'sub_cancel')->first();
         $this->assertTrue($subscription->isCancelled());
+        $this->assertSame('merchant_request', $subscription->cancellation_reason);
+    }
+
+    public function test_it_persists_the_cancellation_reason_on_a_grace_period_cancellation_from_webhook(): void
+    {
+        $user = User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        Subscription::create([
+            'owner_type' => $user->getMorphClass(),
+            'owner_id' => $user->getKey(),
+            'vatly_id' => 'sub_grace',
+            'plan_id' => 'plan_foo',
+            'name' => 'Test Plan',
+            'type' => 'default',
+            'quantity' => 1,
+            'testmode' => true,
+        ]);
+
+        $response = $this->postWebhookEvent('subscription.canceled_with_grace_period', 'sub_grace', 'subscription', [
+            'customerId' => 'customer_abc',
+            'endedAt' => '2026-02-01T00:00:00+00:00',
+            'cancellationReason' => 'customer_request',
+        ]);
+
+        $response->assertStatus(201);
+        $subscription = Subscription::where('vatly_id', 'sub_grace')->first();
+        $this->assertSame('customer_request', $subscription->cancellation_reason);
     }
 
     public function test_it_cancels_a_subscription_for_nonpayment_from_webhook(): void
@@ -579,6 +607,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         $subscription = Subscription::where('vatly_id', 'sub_nonpay')->first();
         $this->assertTrue($subscription->isCancelled());
         $this->assertNotNull($subscription->ends_at);
+        $this->assertSame('payment_failure', $subscription->cancellation_reason);
 
         Event::assertDispatched(
             SubscriptionCanceledForNonpayment::class,

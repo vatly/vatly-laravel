@@ -136,6 +136,7 @@ $user->subscription()->onGracePeriod();
 $user->subscription()->canceled();
 $user->subscription()->valid();
 $user->subscription()->ended();
+$user->subscription()->model()->cancellation_reason;   // why it was canceled: payment_failure / merchant_request / customer_request (or null)
 
 // Subscription operations
 $user->subscription()->swap('subscription_plan_7Hd9Kf2Lm');
@@ -224,9 +225,9 @@ Events available:
 - `Vatly\API\Webhooks\Events\SubscriptionUpdated` — an **immediate** plan/price/interval/quantity change; the local subscription's `plan_id`, `name` and `quantity` are refreshed from the payload (price is not stored locally).
 - `Vatly\API\Webhooks\Events\SubscriptionUpdateScheduled` — a change **scheduled** for the next billing cycle; the local row is left unchanged (the change hasn't applied yet). Dispatched only, exposing the target values via a typed `scheduledUpdate` (`Vatly\API\Types\ScheduledSubscriptionUpdate` — `subscriptionPlanId`, `name`, `description`, `basePrice`, `quantity`, `interval`, `intervalCount`, `effectiveAt`) so you can, e.g., warn the customer of an upcoming price change and when it lands.
 - `Vatly\API\Webhooks\Events\SubscriptionResumed` — the stored end date is cleared.
-- `Vatly\API\Webhooks\Events\SubscriptionCanceledImmediately` — the local subscription's `ends_at` is stamped.
-- `Vatly\API\Webhooks\Events\SubscriptionCanceledForNonpayment` — a **hard cancellation** after payment recovery for a failed renewal is exhausted. Ends the local subscription exactly like an immediate cancellation (`ends_at` stamped), and carries `cancellationReason: payment_failure` (`customerId`, `subscriptionId`, `endsAt`). Listen for it to trigger win-back / re-collection.
-- `Vatly\API\Webhooks\Events\SubscriptionCanceledWithGracePeriod`
+- `Vatly\API\Webhooks\Events\SubscriptionCanceledImmediately` — the local subscription's `ends_at` is stamped and `cancellation_reason` is stored (`merchant_request`).
+- `Vatly\API\Webhooks\Events\SubscriptionCanceledForNonpayment` — a **hard cancellation** after payment recovery for a failed renewal is exhausted. Ends the local subscription exactly like an immediate cancellation (`ends_at` stamped, `cancellation_reason` = `payment_failure`), and carries `cancellationReason: payment_failure` (`customerId`, `subscriptionId`, `endsAt`) on the event. Listen for it to trigger win-back / re-collection.
+- `Vatly\API\Webhooks\Events\SubscriptionCanceledWithGracePeriod` — the local subscription's `ends_at` and `cancellation_reason` (`customer_request` / `merchant_request`) are stored.
 - `Vatly\API\Webhooks\Events\SubscriptionCancellationGracePeriodCompleted` — the grace period set at cancellation has elapsed; carries `customerId`, `subscriptionId`, `endsAt`. The local subscription's `ends_at` is stamped to the actual end (self-healing a missed `subscription.canceled_with_grace_period` webhook and correcting any drift); also dispatched so you can flip your own application-level "fully ended" state without polling.
 - `Vatly\API\Webhooks\Events\WebhookSetupReceived` — a `webhook.setup` endpoint-verification call; no resource to enrich and no local row to touch, just acknowledge with a `2xx`.
 - `Vatly\API\Webhooks\Events\OneOffProductUpdateSubmitted` / `OneOffProductUpdateApproved` / `OneOffProductUpdateRejected` / `OneOffProductArchived` / `OneOffProductUnarchived` and the `SubscriptionPlan…` equivalents — the ten **product moderation events** (the "Manage Products" approval workflow). Each is typed, hydrated from the fat payload (`$event->oneOffProduct` / `$event->subscriptionPlan`, plus `$event->{oneOffProductId|subscriptionPlanId}` and `$event->testmode`). They carry no customer and touch no local table — recorded in `vatly_webhook_calls` and dispatched for your own product-cache busting. See [docs/Webhooks.md](docs/Webhooks.md#product-moderation-events).

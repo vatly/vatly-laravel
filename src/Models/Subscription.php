@@ -36,6 +36,7 @@ use Vatly\Fluent\Vatly;
  * @property string|null $mandate_masked_identifier Customer-facing identifier — card last 4, masked IBAN, etc.
  * @property Carbon|null $trial_ends_at
  * @property Carbon|null $ends_at
+ * @property string|null $cancellation_reason Why the subscription was canceled (Vatly\API\Types\CancellationReason: payment_failure / merchant_request / customer_request); null until a cancellation webhook arrives.
  * @property bool $testmode
  *
  * @method static create(array<string, mixed> $array)
