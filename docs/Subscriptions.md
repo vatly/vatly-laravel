@@ -89,8 +89,9 @@ $user->subscription()->swap('subscription_plan_annual', [
     'invoiceImmediately' => true,
 ]);
 
-// Apply now without charging for the change. The next renewal bills the new price
-$user->subscription()->swap('subscription_plan_annual', [
+// Apply now without charging for the change (the plan must keep the same billing interval).
+// The next renewal bills the new price
+$user->subscription()->swap('subscription_plan_premium', [
     'applyImmediately' => true,
     'prorationCharge' => false,
 ]);
