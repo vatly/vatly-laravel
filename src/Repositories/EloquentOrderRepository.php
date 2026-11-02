@@ -67,6 +67,12 @@ class EloquentOrderRepository implements OrderRepositoryInterface
             if ($data->status !== null) {
                 $order->status = $data->status;
             }
+            // Why the order was canceled (payment_failure), set by the cancellation
+            // webhook reaction. Null means "no change", mirroring the status
+            // convention on the DTO.
+            if ($data->cancellationReason !== null) {
+                $order->cancellation_reason = $data->cancellationReason;
+            }
             if ($data->total !== null) {
                 $order->total = $data->total;
             }
