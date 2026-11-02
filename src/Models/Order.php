@@ -17,6 +17,7 @@ use Vatly\Fluent\Vatly;
  * @property int|null $owner_id
  * @property string|null $customer_id The Vatly customer id (cus_…), populated even for anonymous flows.
  * @property string $status
+ * @property string|null $cancellation_reason Why the order was canceled (Vatly\API\Types\CancellationReason: payment_failure); null until a cancellation webhook carries a reason.
  * @property int $total
  * @property int|null $subtotal
  * @property array<int, array{taxRate: array{name: string, percentage: float, taxablePercentage: float}, amount: int, currency: string}>|null $tax_summary

@@ -14,6 +14,7 @@ use Vatly\API\VatlyApiClient;
 use Vatly\Fluent\Actions\GetOrder;
 use Vatly\Fluent\Contracts\OrderInterface;
 use Vatly\Fluent\Data\StoreOrderData;
+use Vatly\Fluent\Data\UpdateOrderData;
 use Vatly\Fluent\OrderHandle;
 use Vatly\Fluent\Vatly;
 use Vatly\Laravel\Models\Chargeback;
@@ -32,6 +33,29 @@ class OrderTest extends BaseTestCase
         $order = new Order;
 
         $this->assertInstanceOf(OrderInterface::class, $order);
+    }
+
+    public function test_update_persists_the_cancellation_reason_when_present(): void
+    {
+        $order = $this->makeOrder(['cancellation_reason' => null]);
+
+        $this->app->make(EloquentOrderRepository::class)->update($order, new UpdateOrderData(
+            status: 'canceled',
+            cancellationReason: 'payment_failure',
+        ));
+
+        $this->assertSame('payment_failure', $order->fresh()->cancellation_reason);
+    }
+
+    public function test_update_leaves_the_cancellation_reason_alone_when_null(): void
+    {
+        $order = $this->makeOrder(['cancellation_reason' => 'payment_failure']);
+
+        $this->app->make(EloquentOrderRepository::class)->update($order, new UpdateOrderData(
+            status: 'canceled',
+        ));
+
+        $this->assertSame('payment_failure', $order->fresh()->cancellation_reason);
     }
 
     public function test_it_can_be_created_with_attributes(): void
@@ -374,5 +398,19 @@ class OrderTest extends BaseTestCase
         $vatly->shouldReceive('order')->with($order)->andReturn($handle);
 
         $this->app->instance(Vatly::class, $vatly);
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
+    private function makeOrder(array $overrides = []): Order
+    {
+        return Order::create(array_merge([
+            'vatly_id' => 'ord_'.bin2hex(random_bytes(8)),
+            'status' => 'pending',
+            'total' => 9900,
+            'currency' => 'EUR',
+            'testmode' => true,
+        ], $overrides));
     }
 }

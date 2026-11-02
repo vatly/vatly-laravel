@@ -215,7 +215,7 @@ which are internal fluent signals (not webhook payloads) and stay under
 Events available:
 
 - `Vatly\API\Webhooks\Events\OrderPaid` — carries `total`, `subtotal` (both `Vatly\API\Types\Money`), `taxSummary` (full per-rate breakdown), `invoiceNumber`, `paymentMethod`. Read the currency via `$event->total->currency` and minor units via `$event->total->toCents()` (there's no standalone `currency` field). Materialize local invoices without an extra API call.
-- `Vatly\API\Webhooks\Events\OrderCanceled` — the local order's status is mirrored to `canceled`.
+- `Vatly\API\Webhooks\Events\OrderCanceled`: the local order's status is mirrored to `canceled` and its `cancellation_reason` is stored (`payment_failure` when payment recovery for the unpaid order was exhausted, otherwise left `null`).
 - `Vatly\API\Webhooks\Events\OrderChargebackReceived` / `OrderChargebackReversed` — dispute signals carrying the affected `orderId`, enriched with `customerId`, dispute `status`, totals and `taxSummary`; persisted to `vatly_chargebacks` (see below). Also react to suspend/reinstate access — a chargeback never mutates the local order row.
 - `Vatly\API\Webhooks\Events\OrderPaymentFailed` — same enriched order shape as `OrderPaid`; typically the start of dunning.
 - `Vatly\API\Webhooks\Events\CheckoutPaid` / `CheckoutFailed` / `CheckoutCanceled` / `CheckoutExpired` — hosted-checkout lifecycle signals carrying `checkoutId`, nullable `customerId` / `orderId`, `status` and `metadata`. Dispatched straight from the payload (no enrichment GET, no local row); `CheckoutPaid` fires before `OrderPaid` so you can drive in-app receipt/analytics UI, while the others feed retry / cart-abandonment flows.

@@ -18,6 +18,7 @@ use Vatly\API\Webhooks\Events\OneOffProductUnarchived;
 use Vatly\API\Webhooks\Events\OneOffProductUpdateApproved;
 use Vatly\API\Webhooks\Events\OneOffProductUpdateRejected;
 use Vatly\API\Webhooks\Events\OneOffProductUpdateSubmitted;
+use Vatly\API\Webhooks\Events\OrderCanceled;
 use Vatly\API\Webhooks\Events\OrderChargebackReceived;
 use Vatly\API\Webhooks\Events\OrderChargebackReversed;
 use Vatly\API\Webhooks\Events\OrderPaymentFailed;
@@ -305,6 +306,48 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             fn (OrderPaymentFailed $event): bool => $event->orderId === 'order_failed_2'
                 && $event->customerId === 'customer_abc',
         );
+    }
+
+    public function test_it_persists_the_cancellation_reason_on_a_canceled_order(): void
+    {
+        Event::fake([OrderCanceled::class]);
+
+        $this->makeLocalOrder('order_unpaid');
+
+        $response = $this->postWebhookEvent('order.canceled', 'order_unpaid', 'order', [
+            'customerId' => 'customer_abc',
+            'status' => 'canceled',
+            'cancellationReason' => 'payment_failure',
+        ]);
+
+        $response->assertStatus(201);
+
+        $order = Order::where('vatly_id', 'order_unpaid')->first();
+        $this->assertSame('canceled', $order->status);
+        $this->assertSame('payment_failure', $order->cancellation_reason);
+
+        Event::assertDispatched(
+            OrderCanceled::class,
+            fn (OrderCanceled $event): bool => $event->orderId === 'order_unpaid'
+                && $event->cancellationReason === 'payment_failure',
+        );
+    }
+
+    public function test_it_leaves_the_cancellation_reason_null_when_the_delivery_has_none(): void
+    {
+        $this->makeLocalOrder('order_no_reason');
+
+        $response = $this->postWebhookEvent('order.canceled', 'order_no_reason', 'order', [
+            'customerId' => 'customer_abc',
+            'status' => 'canceled',
+            'cancellationReason' => null,
+        ]);
+
+        $response->assertStatus(201);
+
+        $order = Order::where('vatly_id', 'order_no_reason')->first();
+        $this->assertSame('canceled', $order->status);
+        $this->assertNull($order->cancellation_reason);
     }
 
     public function test_it_dispatches_the_order_was_created_from_webhook_event(): void
@@ -929,5 +972,16 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             fn (object $event): bool => $event->{$idProperty} === $entityId
                 && $event->testmode === true,
         );
+    }
+
+    private function makeLocalOrder(string $vatlyId): Order
+    {
+        return Order::create([
+            'vatly_id' => $vatlyId,
+            'status' => 'pending',
+            'total' => 9900,
+            'currency' => 'EUR',
+            'testmode' => true,
+        ]);
     }
 }

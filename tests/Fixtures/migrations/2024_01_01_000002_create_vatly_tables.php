@@ -31,6 +31,7 @@ return new class extends Migration
             $table->nullableMorphs('owner');
             $table->string('vatly_id')->unique();
             $table->string('status');
+            $table->string('cancellation_reason')->nullable();
             $table->integer('total');
             $table->integer('subtotal')->nullable();
             $table->json('tax_summary')->nullable();
