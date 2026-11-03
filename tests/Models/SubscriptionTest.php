@@ -6,6 +6,7 @@ namespace Vatly\Laravel\Tests\Models;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Vatly\Laravel\Facades\Vatly;
 use Vatly\Laravel\Models\Order;
 use Vatly\Laravel\Models\OrderLine;
 use Vatly\Laravel\Models\Subscription;
@@ -40,6 +41,27 @@ class SubscriptionTest extends BaseTestCase
         $this->assertNull($subscription->getEndsAt());
         $this->assertIsBool($subscription->testmode);
         $this->assertTrue($subscription->isTestmode());
+    }
+
+    public function test_swap_without_charge_goes_through_the_subscription_handle(): void
+    {
+        $vatly = Vatly::fake();
+        $user = User::factory()->create(['vatly_id' => 'customer_456']);
+
+        $subscription = Subscription::create([
+            'owner_type' => $user->getMorphClass(),
+            'owner_id' => $user->getKey(),
+            'vatly_id' => 'subscription_789',
+            'plan_id' => 'plan_basic',
+            'name' => 'Basic Plan',
+            'type' => 'default',
+            'quantity' => 1,
+            'testmode' => true,
+        ]);
+
+        $this->assertSame($subscription, $subscription->swapWithoutCharge('plan_premium'));
+
+        $vatly->assertSubscriptionSwapped(from: 'plan_basic', to: 'plan_premium');
     }
 
     public function test_it_identifies_active_subscriptions()

@@ -217,6 +217,18 @@ class Subscription extends Model implements SubscriptionInterface
     }
 
     /**
+     * Swap to a different plan now without charging for the change.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function swapWithoutCharge(string $planId, array $options = []): self
+    {
+        $this->handle()->swapWithoutCharge($planId, $options);
+
+        return $this;
+    }
+
+    /**
      * Create a signed URL where the customer can update billing details.
      *
      * @param  array<string, mixed>  $prefillData
