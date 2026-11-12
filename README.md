@@ -10,7 +10,7 @@
 
 A Cashier-style integration for [Vatly](https://vatly.com) in your Laravel application. Drop a `Billable` trait on your User model and you get subscriptions, checkouts, customer management, hosted billing update links, and a fully wired webhook endpoint — built around Eloquent and Laravel's IoC, events, and routing.
 
-If you've used a Cashier-style billing package, this will feel familiar. Vatly is the Merchant of Record for European software and digital products: it is the legal seller on every sale and handles payments, tax and compliance. You get a similar developer experience without managing VAT, invoicing or payment compliance yourself.
+If you've used a Cashier-style billing package, this will feel familiar. Vatly is the European Merchant of Record for AI, software and digital products: it is the legal seller on every sale and handles payments, tax and compliance. You get a similar developer experience without managing VAT, invoicing or payment compliance yourself.
 
 ## Documentation
 

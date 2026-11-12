@@ -1,6 +1,6 @@
 {
     "name": "vatly/vatly-laravel",
-    "description": "Laravel integration for Vatly, the Merchant of Record for European software and digital products. Inspired by Laravel Cashier.",
+    "description": "Laravel integration for Vatly, the European Merchant of Record for AI, software and digital products. Inspired by Laravel Cashier.",
     "keywords": [
         "vatly",
         "laravel",
