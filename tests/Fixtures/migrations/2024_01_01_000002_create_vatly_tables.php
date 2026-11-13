@@ -55,10 +55,12 @@ return new class extends Migration
             $table->json('tax_summary')->nullable();
             $table->string('product_type')->nullable();
             $table->string('product_id')->nullable();
+            $table->string('subscription_id')->nullable();
             $table->timestamps();
 
             $table->index('order_vatly_id');
             $table->index(['product_type', 'product_id']);
+            $table->index('subscription_id');
         });
 
         Schema::create('vatly_refunds', function (Blueprint $table) {

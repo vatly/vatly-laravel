@@ -248,6 +248,43 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         ]);
     }
 
+    public function test_it_persists_the_subscription_link_of_an_initial_signup_line(): void
+    {
+        User::factory()->create(['vatly_id' => 'customer_abc']);
+
+        $response = $this->postOrderWebhook('order.paid', $this->buildApiOrder([
+            'id' => 'order_signup_wh',
+            'customerId' => 'customer_abc',
+            'totalValue' => '99.00',
+            'subtotalValue' => '81.82',
+            'currency' => 'EUR',
+            'invoiceNumber' => 'INV-011',
+            'paymentMethod' => 'card',
+            'taxRates' => [],
+            'lines' => [
+                [
+                    'id' => 'order_item_signup',
+                    'description' => 'Pro plan — monthly',
+                    'quantity' => 1,
+                    'basePriceValue' => '99.00',
+                    'totalValue' => '99.00',
+                    'subtotalValue' => '81.82',
+                    'productType' => 'subscription_plan',
+                    'productId' => 'subscription_plan_pro',
+                    'subscriptionId' => 'subscription_signup',
+                ],
+            ],
+        ]));
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('vatly_order_lines', [
+            'vatly_id' => 'order_item_signup',
+            'product_type' => 'subscription_plan',
+            'product_id' => 'subscription_plan_pro',
+            'subscription_id' => 'subscription_signup',
+        ]);
+    }
+
     public function test_it_stores_an_order_when_a_payment_fails_from_webhook(): void
     {
         $user = User::factory()->create(['vatly_id' => 'customer_abc']);

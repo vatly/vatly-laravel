@@ -27,8 +27,11 @@ class EloquentOrderLineRepository implements OrderLineRepositoryInterface
      */
     public function listForSubscription(string $subscriptionId): array
     {
-        return OrderLine::where('product_type', 'subscription')
-            ->where('product_id', $subscriptionId)
+        return OrderLine::query()
+            ->where('subscription_id', $subscriptionId)
+            ->orWhere(fn ($query) => $query
+                ->where('product_type', 'subscription')
+                ->where('product_id', $subscriptionId))
             ->get()
             ->all();
     }
@@ -46,6 +49,7 @@ class EloquentOrderLineRepository implements OrderLineRepositoryInterface
             'tax_summary' => $this->serializeTaxSummary($data->taxSummary),
             'product_type' => $data->productType,
             'product_id' => $data->productId,
+            'subscription_id' => $data->relatedResources?->subscriptionId,
         ]);
     }
 }
