@@ -282,7 +282,7 @@ trait PostsVatlyWebhooks
      *   invoiceNumber: ?string,
      *   paymentMethod: ?string,
      *   taxRates: array<int, array{name: string, percentage: float, taxablePercentage: float, amount: string}>,
-     *   lines?: array<int, array{id: string, description: string, quantity: int, basePriceValue: string, totalValue: string, subtotalValue: string, productType?: ?string, productId?: ?string}>,
+     *   lines?: array<int, array{id: string, description: string, quantity: int, basePriceValue: string, totalValue: string, subtotalValue: string, productType?: ?string, productId?: ?string, subscriptionId?: ?string}>,
      * }  $data
      */
     protected function buildApiOrder(array $data): ApiOrder
@@ -310,6 +310,9 @@ trait PostsVatlyWebhooks
                 'taxes' => [],
                 'productType' => $line['productType'] ?? null,
                 'productId' => $line['productId'] ?? null,
+                'relatedResources' => isset($line['subscriptionId'])
+                    ? (object) ['subscriptionId' => $line['subscriptionId']]
+                    : null,
             ],
             $data['lines'] ?? [],
         );

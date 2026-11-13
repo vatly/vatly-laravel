@@ -1,0 +1,51 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * Adds the indexed `subscription_id` column to an existing installation's
+     * `vatly_order_lines` table. Guarded so it is a safe no-op on a fresh
+     * install where the create migration already defines the column (order of
+     * same-timestamp published migrations is not guaranteed).
+     */
+    public function up(): void
+    {
+        if (! Schema::hasTable('vatly_order_lines')) {
+            return;
+        }
+
+        if (Schema::hasColumn('vatly_order_lines', 'subscription_id')) {
+            return;
+        }
+
+        Schema::table('vatly_order_lines', function (Blueprint $table) {
+            $table->string('subscription_id')->nullable()->after('product_id');
+            $table->index('subscription_id');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        if (! Schema::hasTable('vatly_order_lines')) {
+            return;
+        }
+
+        if (! Schema::hasColumn('vatly_order_lines', 'subscription_id')) {
+            return;
+        }
+
+        Schema::table('vatly_order_lines', function (Blueprint $table) {
+            $table->dropIndex(['subscription_id']);
+            $table->dropColumn('subscription_id');
+        });
+    }
+};
