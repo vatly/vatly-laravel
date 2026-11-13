@@ -5,7 +5,11 @@
         "vatly",
         "laravel",
         "subscriptions",
-        "billing"
+        "billing",
+        "payments",
+        "merchant-of-record",
+        "vat",
+        "ai"
     ],
     "license": "MIT",
     "authors": [
