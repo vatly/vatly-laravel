@@ -30,7 +30,13 @@ class VatlyInboundWebhookController
                 payload: (string) $request->getContent(),
                 signature: (string) $request->header(SignatureVerifier::SIGNATURE_HEADER_NAME, ''),
             );
-        } catch (InvalidWebhookSignatureException) {
+        } catch (InvalidWebhookSignatureException $exception) {
+            // No secret configured: refuse without processing, and answer 503
+            // so Vatly retries the delivery once VATLY_WEBHOOK_SECRET is set.
+            if ($exception->isSecretNotConfigured()) {
+                return response('webhook_secret_not_configured', 503);
+            }
+
             return response('', 403);
         }
 

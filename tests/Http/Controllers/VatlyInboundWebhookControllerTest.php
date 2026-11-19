@@ -32,8 +32,10 @@ use Vatly\API\Webhooks\Events\SubscriptionPlanUnarchived;
 use Vatly\API\Webhooks\Events\SubscriptionPlanUpdateApproved;
 use Vatly\API\Webhooks\Events\SubscriptionPlanUpdateRejected;
 use Vatly\API\Webhooks\Events\SubscriptionPlanUpdateSubmitted;
+use Vatly\API\Webhooks\Events\SubscriptionStarted;
 use Vatly\API\Webhooks\Events\WebhookSetupReceived;
 use Vatly\Fluent\Events\OrderWasCreatedFromWebhook;
+use Vatly\Fluent\Webhooks\WebhookProcessor;
 use Vatly\Laravel\Events\LaravelEventDispatcher;
 use Vatly\Laravel\Models\Chargeback;
 use Vatly\Laravel\Models\Order;
@@ -105,6 +107,31 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         );
 
         $response->assertStatus(403);
+    }
+
+    /**
+     * @return array<string, array{?string}>
+     */
+    public static function missingSecrets(): array
+    {
+        return ['null' => [null], 'empty' => [''], 'whitespace' => ['  ']];
+    }
+
+    #[DataProvider('missingSecrets')]
+    public function test_it_returns_503_and_processes_nothing_while_no_secret_is_configured(?string $missingSecret): void
+    {
+        $this->app['config']->set('vatly.webhook_secret', $missingSecret);
+        $this->app->forgetInstance(WebhookProcessor::class);
+        // Sign with the empty key, so only the missing-secret check can refuse it.
+        $this->webhookSecret = '';
+        Event::fake();
+
+        $response = $this->postWebhookEvent('subscription.started', 'sub_123', 'subscription', ['id' => 'sub_123']);
+
+        $response->assertStatus(503);
+        $this->assertSame('webhook_secret_not_configured', $response->getContent());
+        $this->assertDatabaseCount('vatly_webhook_calls', 0);
+        Event::assertNotDispatched(SubscriptionStarted::class);
     }
 
     public function test_it_returns_403_for_a_stale_timestamp(): void
