@@ -35,10 +35,12 @@ Full docs at [docs.vatly.com](https://docs.vatly.com). In this repo:
 ## Installation
 
 ```bash
-composer require vatly/vatly-laravel:v0.7.0-alpha.17
+composer config minimum-stability alpha
+composer config prefer-stable true
+composer require vatly/vatly-laravel
 ```
 
-Pin to an exact version during alpha — the API will change.
+This package is in alpha and the API will change. The two `config` commands let Composer install alpha releases while `prefer-stable` keeps your other dependencies on stable releases. Composer installs the latest alpha and records it in `composer.lock`; review the changelog before upgrading.
 
 ## Setup
 
