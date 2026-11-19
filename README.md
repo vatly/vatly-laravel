@@ -192,7 +192,7 @@ See [docs/Subscriptions.md](docs/Subscriptions.md) and [docs/Checkouts.md](docs/
 
 ## Webhooks
 
-The package registers `POST /webhooks/vatly` automatically. Set this URL and your `VATLY_WEBHOOK_SECRET` in the Vatly dashboard, and subscriptions/orders sync to your database automatically.
+The package registers `POST /webhooks/vatly` automatically. Set this URL and your `VATLY_WEBHOOK_SECRET` in the Vatly dashboard, and subscriptions/orders sync to your database automatically. Webhooks are refused until a secret is configured: while `VATLY_WEBHOOK_SECRET` is empty or unset, the endpoint answers `503 webhook_secret_not_configured` and processes nothing, and Vatly retries the delivery once the secret is set.
 
 Vatly events are dispatched on Laravel's event bus — register listeners the usual way:
 

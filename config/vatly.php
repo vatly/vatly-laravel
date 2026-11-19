@@ -39,7 +39,8 @@ return [
     | Webhook Secret
     |--------------------------------------------------------------------------
     |
-    | The secret used to verify webhook signatures from Vatly.
+    | The secret used to verify webhook signatures from Vatly. Webhooks are
+    | refused with a 503 until it is set.
     |
     */
     'webhook_secret' => env('VATLY_WEBHOOK_SECRET', ''),
