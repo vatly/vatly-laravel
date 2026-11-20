@@ -413,10 +413,10 @@ A couple of shape differences worth flagging for whoever's implementing:
 
 ## Reference
 
-- **Deciding / comparing** → [How Vatly compares](Comparison.md) (Merchant-of-Record model,
+- **Deciding / comparing:** [How Vatly compares](Comparison.md) (Merchant-of-Record model,
   feature parity, roadmap)
-- **Getting started** → [Getting started](README.md) · [Configuration](configuration.md)
-- **API surface** → [Customers](Customers.md) · [Checkouts](Checkouts.md) · [Subscriptions](Subscriptions.md) · [Orders](Orders.md) · [Webhooks](Webhooks.md)
+- **Getting started:** [Getting started](README.md) · [Configuration](configuration.md)
+- **API surface:** [Customers](Customers.md) · [Checkouts](Checkouts.md) · [Subscriptions](Subscriptions.md) · [Orders](Orders.md) · [Webhooks](Webhooks.md)
 
 Compared against, at time of writing:
 [Laravel Cashier (Stripe)](https://laravel.com/docs/12.x/billing) ·
