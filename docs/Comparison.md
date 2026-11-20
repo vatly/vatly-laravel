@@ -146,11 +146,11 @@ to, and that's where Vatly stands apart:
 
 ## Next steps
 
-- **Starting fresh** → [Getting started](README.md) wires up the trait, config, migrations and
+- **Starting fresh:** [Getting started](README.md) wires up the trait, config, migrations and
   webhook in a few minutes.
-- **Already running another provider** → [Migrating from Cashier](Migrating-to-Vatly.md)
+- **Already running another provider:** [Migrating from Cashier](Migrating-to-Vatly.md)
   shows how to add Vatly beside your current biller and migrate customers over gradually.
-- **Reference** → [Configuration](configuration.md) · [Customers](Customers.md) · [Checkouts](Checkouts.md) · [Subscriptions](Subscriptions.md) · [Orders](Orders.md) · [Webhooks](Webhooks.md)
+- **Reference:** [Configuration](configuration.md) · [Customers](Customers.md) · [Checkouts](Checkouts.md) · [Subscriptions](Subscriptions.md) · [Orders](Orders.md) · [Webhooks](Webhooks.md)
 
 Compared against, at time of writing:
 [Laravel Cashier (Stripe)](https://laravel.com/docs/12.x/billing) ·
