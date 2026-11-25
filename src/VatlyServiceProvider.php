@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 use Vatly\Fluent\Contracts\ChargebackRepositoryInterface;
 use Vatly\Fluent\Contracts\ConfigurationInterface;
@@ -19,6 +20,7 @@ use Vatly\Fluent\Webhooks\WebhookProcessor;
 use Vatly\Fluent\Wiring;
 use Vatly\Laravel\Events\LaravelEventDispatcher;
 use Vatly\Laravel\Facades\Vatly as VatlyFacade;
+use Vatly\Laravel\Models\VatlyWebhookCall;
 use Vatly\Laravel\Repositories\EloquentChargebackRepository;
 use Vatly\Laravel\Repositories\EloquentCustomerBindingRepository;
 use Vatly\Laravel\Repositories\EloquentOrderLineRepository;
@@ -73,6 +75,24 @@ class VatlyServiceProvider extends ServiceProvider
         }
 
         $this->bootPublishing();
+        $this->bootPruning();
+    }
+
+    /**
+     * Delete old rows from vatly_webhook_calls daily. `model:prune` only finds
+     * the app's own models, so the package names its model itself.
+     */
+    private function bootPruning(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            if ((int) config('vatly.webhook_calls_retention_days') < 1) {
+                return;
+            }
+
+            $schedule->command('model:prune', ['--model' => [VatlyWebhookCall::class]])
+                ->daily()
+                ->name('vatly:prune-webhook-calls');
+        });
     }
 
     private function bootPublishing(): void

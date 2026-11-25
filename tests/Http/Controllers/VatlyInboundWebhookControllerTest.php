@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\DataProvider;
+use RuntimeException;
 use Vatly\API\Types\Mandate;
 use Vatly\API\Webhooks\Events\CheckoutCanceled;
 use Vatly\API\Webhooks\Events\CheckoutExpired;
@@ -80,6 +81,53 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
 
         $response->assertStatus(201);
         $this->assertDatabaseCount('vatly_webhook_calls', 1);
+    }
+
+    public function test_a_webhook_that_failed_is_applied_when_vatly_retries_it(): void
+    {
+        User::factory()->create(['vatly_id' => 'customer_retry']);
+        $payload = $this->makeWebhookPayload('subscription.started', 'sub_retry', 'subscription', $this->apiResourceToWebhookObject(
+            $this->buildApiSubscription([
+                'id' => 'sub_retry',
+                'customerId' => 'customer_retry',
+                'subscriptionPlanId' => 'plan_foo',
+                'name' => 'Test Plan',
+                'quantity' => 1,
+            ]),
+        ));
+
+        $attempts = 0;
+        $handled = 0;
+        Event::listen(SubscriptionStarted::class, function () use (&$attempts, &$handled): void {
+            if (++$attempts === 1) {
+                throw new RuntimeException('Listener failed');
+            }
+            $handled++;
+        });
+
+        $this->postSignedWebhook($payload)->assertStatus(500);
+        $this->postSignedWebhook($payload)->assertStatus(201);
+
+        $this->assertSame(1, $handled);
+        $this->assertDatabaseCount('vatly_webhook_calls', 1);
+        $this->assertDatabaseHas('vatly_subscriptions', ['vatly_id' => 'sub_retry']);
+    }
+
+    public function test_the_debug_log_keeps_only_the_event_ids(): void
+    {
+        config(['app.debug' => true]);
+        Log::spy();
+
+        $this->postWebhookEvent('order.paid', 'order_123', 'order', [
+            'customerDetails' => ['email' => 'jane@example.com'],
+        ]);
+
+        Log::shouldHaveReceived('info')->once()->withArgs(
+            fn (string $message, array $context): bool => array_keys($context) === ['id', 'eventName', 'entityType', 'entityId']
+                && $context['eventName'] === 'order.paid'
+                && $context['entityId'] === 'order_123'
+                && ! str_contains((string) json_encode($context), 'jane@example.com'),
+        );
     }
 
     public function test_it_returns_403_for_an_invalid_signature(): void
