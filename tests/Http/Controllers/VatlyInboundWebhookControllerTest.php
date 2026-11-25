@@ -7,6 +7,7 @@ namespace Vatly\Laravel\Tests\Http\Controllers;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Vatly\API\Types\Mandate;
 use Vatly\API\Webhooks\Events\CheckoutCanceled;
@@ -35,6 +36,7 @@ use Vatly\API\Webhooks\Events\SubscriptionPlanUpdateSubmitted;
 use Vatly\API\Webhooks\Events\SubscriptionStarted;
 use Vatly\API\Webhooks\Events\WebhookSetupReceived;
 use Vatly\Fluent\Events\OrderWasCreatedFromWebhook;
+use Vatly\Fluent\Vatly;
 use Vatly\Fluent\Webhooks\WebhookProcessor;
 use Vatly\Laravel\Events\LaravelEventDispatcher;
 use Vatly\Laravel\Models\Chargeback;
@@ -132,6 +134,55 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         $this->assertSame('webhook_secret_not_configured', $response->getContent());
         $this->assertDatabaseCount('vatly_webhook_calls', 0);
         Event::assertNotDispatched(SubscriptionStarted::class);
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function unusableApiKeys(): array
+    {
+        return [
+            'empty' => ['', 'api_key_not_configured'],
+            'whitespace' => ['  ', 'api_key_not_configured'],
+            'garbage' => ['not-a-vatly-key', 'api_key_invalid'],
+            'too short' => ['test_abc', 'api_key_invalid'],
+        ];
+    }
+
+    #[DataProvider('unusableApiKeys')]
+    public function test_it_returns_503_and_processes_nothing_while_the_api_key_is_unusable(string $apiKey, string $expectedBody): void
+    {
+        $this->app['config']->set('vatly.api_key', $apiKey);
+        $this->app->forgetInstance(Vatly::class);
+        Log::spy();
+        Event::fake();
+
+        $response = $this->postWebhookEvent('subscription.started', 'sub_123', 'subscription', ['id' => 'sub_123']);
+
+        $response->assertStatus(503);
+        $this->assertSame($expectedBody, $response->getContent());
+        $this->assertDatabaseCount('vatly_webhook_calls', 0);
+        Event::assertNotDispatched(SubscriptionStarted::class);
+        // The log names the setting but never repeats the key itself.
+        Log::shouldHaveReceived('error')->once()->withArgs(
+            fn (string $message): bool => str_contains($message, 'VATLY_KEY')
+                && (trim($apiKey) === '' || ! str_contains($message, $apiKey)),
+        );
+    }
+
+    public function test_it_reports_the_missing_secret_before_the_key_once_the_key_is_valid(): void
+    {
+        $this->app['config']->set('vatly.webhook_secret', '');
+        $this->app->forgetInstance(WebhookProcessor::class);
+        Log::spy();
+
+        $response = $this->postWebhookEvent('subscription.started', 'sub_123', 'subscription', ['id' => 'sub_123']);
+
+        $response->assertStatus(503);
+        $this->assertSame('webhook_secret_not_configured', $response->getContent());
+        Log::shouldHaveReceived('error')->once()->withArgs(
+            fn (string $message): bool => str_contains($message, 'VATLY_WEBHOOK_SECRET'),
+        );
     }
 
     public function test_it_returns_403_for_a_stale_timestamp(): void

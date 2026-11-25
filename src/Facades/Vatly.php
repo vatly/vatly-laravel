@@ -43,6 +43,22 @@ use Vatly\Laravel\VatlyConfig;
 class Vatly extends Facade
 {
     /**
+     * Whether the package registers its `POST /webhooks/vatly` route.
+     */
+    public static bool $registersRoutes = true;
+
+    /**
+     * Stop the package from registering its webhook route, as with Cashier's
+     * `Cashier::ignoreRoutes()`. Call it from a service provider's
+     * `register()` method, for example when Vatly is installed but not the
+     * active billing provider, or to register the route yourself.
+     */
+    public static function ignoreRoutes(): void
+    {
+        static::$registersRoutes = false;
+    }
+
+    /**
      * Swap the Vatly composition root for a {@see FakeVatly} and bind it into
      * the container — the Cashier-style one-liner (`Vatly::fake()`) for feature
      * tests.

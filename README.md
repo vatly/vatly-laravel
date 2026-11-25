@@ -42,6 +42,12 @@ composer require vatly/vatly-laravel
 
 This package is in alpha and the API will change. The two `config` commands let Composer install alpha releases while `prefer-stable` keeps your other dependencies on stable releases. Composer installs the latest alpha and records it in `composer.lock`; review the changelog before upgrading.
 
+To keep your app on `"minimum-stability": "stable"` instead, require the package and its two Vatly dependencies with an `@alpha` flag each. A stability flag only applies to the package it is written on, so requiring just `vatly/vatly-laravel:^0.7@alpha` fails because `vatly/vatly-fluent-php` and `vatly/vatly-api-php` are alpha too:
+
+```bash
+composer require vatly/vatly-laravel:^0.7@alpha vatly/vatly-fluent-php:^0.8@alpha vatly/vatly-api-php:^0.1@alpha
+```
+
 ## Setup
 
 1. **Publish the config:**
@@ -192,7 +198,9 @@ See [docs/Subscriptions.md](docs/Subscriptions.md) and [docs/Checkouts.md](docs/
 
 ## Webhooks
 
-The package registers `POST /webhooks/vatly` automatically. Set this URL and your `VATLY_WEBHOOK_SECRET` in the Vatly dashboard, and subscriptions/orders sync to your database automatically. Webhooks are refused until a secret is configured: while `VATLY_WEBHOOK_SECRET` is empty or unset, the endpoint answers `503 webhook_secret_not_configured` and processes nothing, and Vatly retries the delivery once the secret is set.
+The package registers `POST /webhooks/vatly` automatically. Set this URL and your `VATLY_WEBHOOK_SECRET` in the Vatly dashboard, and subscriptions/orders sync to your database automatically. Webhooks are refused until a secret is configured: while `VATLY_WEBHOOK_SECRET` is empty or unset, the endpoint answers `503 webhook_secret_not_configured` and processes nothing, and Vatly retries the delivery once the secret is set. The API key works the same way: an empty `VATLY_KEY` gets `503 api_key_not_configured`, a malformed one `503 api_key_invalid`, and each refusal logs which setting to fix. Pages that do not call Vatly keep working without a key.
+
+To stop the package from registering the route, for example when Vatly is installed but not your active billing provider, call `Vatly::ignoreRoutes()` (from `Vatly\Laravel\Facades\Vatly`) in the `register` method of your `AppServiceProvider`.
 
 Vatly events are dispatched on Laravel's event bus — register listeners the usual way:
 

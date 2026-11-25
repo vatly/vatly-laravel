@@ -18,6 +18,7 @@ use Vatly\Fluent\Vatly;
 use Vatly\Fluent\Webhooks\WebhookProcessor;
 use Vatly\Fluent\Wiring;
 use Vatly\Laravel\Events\LaravelEventDispatcher;
+use Vatly\Laravel\Facades\Vatly as VatlyFacade;
 use Vatly\Laravel\Repositories\EloquentChargebackRepository;
 use Vatly\Laravel\Repositories\EloquentCustomerBindingRepository;
 use Vatly\Laravel\Repositories\EloquentOrderLineRepository;
@@ -67,7 +68,10 @@ class VatlyServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        if (VatlyFacade::$registersRoutes) {
+            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        }
+
         $this->bootPublishing();
     }
 
