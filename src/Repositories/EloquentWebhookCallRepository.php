@@ -24,8 +24,10 @@ class EloquentWebhookCallRepository implements WebhookCallRepositoryInterface
         array $object,
         ?string $vatlyCustomerId = null,
     ): void {
-        VatlyWebhookCall::create([
-            'vatly_id' => $id,
+        // A redelivery of an event whose earlier processing failed replaces the
+        // row, so the retry can run the reactions again instead of failing on
+        // the unique vatly_id.
+        VatlyWebhookCall::updateOrCreate(['vatly_id' => $id], [
             'resource' => $resource,
             'event_name' => $eventName,
             'entity_type' => $entityType,

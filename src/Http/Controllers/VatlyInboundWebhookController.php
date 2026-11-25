@@ -17,7 +17,13 @@ class VatlyInboundWebhookController
     public function __invoke(Request $request): Response
     {
         if (config('app.debug')) {
-            Log::info('Vatly Webhook request received!', $request->all());
+            // Ids only: the body carries the customer's personal data.
+            Log::info('Vatly Webhook request received!', [
+                'id' => $request->input('id'),
+                'eventName' => $request->input('eventName'),
+                'entityType' => $request->input('entityType'),
+                'entityId' => $request->input('entityId'),
+            ]);
         }
 
         // Resolved here rather than injected: building the Vatly client

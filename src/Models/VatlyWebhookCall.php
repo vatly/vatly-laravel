@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Vatly\Laravel\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -21,6 +23,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class VatlyWebhookCall extends Model
 {
+    use MassPrunable;
+
     public const DEFAULT_DAYS_TO_RETAIN = 7;
 
     protected $table = 'vatly_webhook_calls';
@@ -42,6 +46,24 @@ class VatlyWebhookCall extends Model
         'vatly_created_at' => 'datetime',
         'object' => 'array',
     ];
+
+    /**
+     * Rows older than `vatly.webhook_calls_retention_days`, which the package
+     * deletes daily through `model:prune`. A retention of 0 or null keeps
+     * every row.
+     *
+     * @return Builder<static>
+     */
+    public function prunable(): Builder
+    {
+        $days = (int) config('vatly.webhook_calls_retention_days');
+
+        if ($days < 1) {
+            return static::query()->whereRaw('1 = 0');
+        }
+
+        return static::query()->where('created_at', '<', Carbon::now()->subDays($days));
+    }
 
     public static function cleanUp(int $daysToRetain = self::DEFAULT_DAYS_TO_RETAIN): int
     {

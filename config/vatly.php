@@ -47,6 +47,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Webhook Call Retention
+    |--------------------------------------------------------------------------
+    |
+    | Days a row in vatly_webhook_calls is kept. The package deletes older rows
+    | daily through Laravel's scheduler (`model:prune`). Set to 0 to keep them.
+    |
+    */
+    'webhook_calls_retention_days' => (int) env('VATLY_WEBHOOK_CALLS_RETENTION_DAYS', 30),
+
+    /*
+    |--------------------------------------------------------------------------
     | Billable Model
     |--------------------------------------------------------------------------
     |
