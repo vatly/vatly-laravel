@@ -19,6 +19,7 @@ use Vatly\Fluent\Contracts\RefundInterface;
  * @property int|null $subtotal
  * @property array<int, array{taxRate: array{name: string, percentage: float, taxablePercentage: float}, amount: int, currency: string}>|null $tax_summary
  * @property string $currency
+ * @property array<string, mixed>|null $metadata The `metadata` sent when the refund was created; null when none was sent, for refunds created before Vatly stored it, and until the column is migrated.
  * @property bool $testmode
  *
  * @method static create(array<string, mixed> $array)
@@ -35,6 +36,7 @@ class Refund extends Model implements RefundInterface
      */
     protected $casts = [
         'tax_summary' => 'array',
+        'metadata' => 'array',
         'testmode' => 'boolean',
     ];
 

@@ -739,6 +739,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
             'taxRates' => [
                 ['name' => 'VAT', 'percentage' => 21.0, 'taxablePercentage' => 100.0, 'amount' => '17.18'],
             ],
+            'metadata' => ['ticketId' => 'T-42', 'requestedBy' => 'support'],
         ]));
 
         $response->assertStatus(201);
@@ -755,6 +756,7 @@ class VatlyInboundWebhookControllerTest extends BaseTestCase
         $this->assertSame(8182, $refund->subtotal);
         $this->assertSame(1718, $refund->tax_summary[0]['amount']);
         $this->assertTrue($refund->isCompleted());
+        $this->assertSame(['ticketId' => 'T-42', 'requestedBy' => 'support'], $refund->metadata);
     }
 
     public function test_it_dispatches_the_refund_completed_event_from_webhook(): void

@@ -83,7 +83,8 @@ trait ManagesVatlyCustomer
      *
      * `$options` keys not consumed by `email` / `name` (the host-supplied
      * defaults the trait fills in from this model) are forwarded as-is to
-     * the create-customer API call — `locale`, `metadata`, etc.
+     * the create-customer API call, which accepts only `metadata` besides
+     * `email` and `name`.
      *
      * @param  array<string, mixed>  $options  Create-customer API payload keys.
      *                                         Caller-supplied `email` / `name`
