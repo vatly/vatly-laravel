@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel\Repositories;
 
+use Illuminate\Support\Facades\Schema;
 use Vatly\Fluent\Contracts\RefundInterface;
 use Vatly\Fluent\Contracts\RefundRepositoryInterface;
 use Vatly\Fluent\Data\StoreRefundData;
@@ -63,6 +64,10 @@ class EloquentRefundRepository implements RefundRepositoryInterface
             $attrs['owner_id'] = $data->hostCustomerId;
         }
 
+        if ($data->metadata !== null && $this->hasMetadataColumn()) {
+            $attrs['metadata'] = $data->metadata;
+        }
+
         return Refund::create($attrs);
     }
 
@@ -84,9 +89,27 @@ class EloquentRefundRepository implements RefundRepositoryInterface
             if ($data->currency !== null) {
                 $refund->currency = $data->currency;
             }
+            // Null means "no change", so a webhook without metadata never clears it.
+            if ($data->metadata !== null && $this->hasMetadataColumn()) {
+                $refund->metadata = $data->metadata;
+            }
             $refund->save();
         }
 
         return $refund;
+    }
+
+    /**
+     * Whether `vatly_refunds.metadata` exists. Installations that have not run
+     * the add_metadata_to_vatly_refunds_table migration yet keep storing
+     * refunds, without their metadata. Checked only when there is metadata to
+     * write.
+     */
+    private function hasMetadataColumn(): bool
+    {
+        $refund = new Refund;
+
+        return Schema::connection($refund->getConnectionName())
+            ->hasColumn($refund->getTable(), 'metadata');
     }
 }

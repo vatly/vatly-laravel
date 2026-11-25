@@ -341,6 +341,7 @@ trait PostsVatlyWebhooks
      *   subtotalValue: string,
      *   currency: string,
      *   taxRates: array<int, array{name: string, percentage: float, taxablePercentage: float, amount: string}>,
+     *   metadata?: array<string, mixed>|null,
      * }  $data
      */
     protected function buildApiRefund(array $data): ApiRefund
@@ -351,6 +352,7 @@ trait PostsVatlyWebhooks
         $refund->originalOrderId = $data['originalOrderId'];
         $refund->status = $data['status'];
         $refund->testmode = $data['testmode'] ?? true;
+        $refund->metadata = $data['metadata'] ?? null;
         $refund->total = new Money($data['currency'], $data['totalValue']);
         $refund->subtotal = new Money($data['currency'], $data['subtotalValue']);
         $refund->taxSummary = new TaxSummaryCollection(array_map(

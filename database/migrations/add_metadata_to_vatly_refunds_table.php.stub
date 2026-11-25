@@ -1,0 +1,49 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * Adds the nullable JSON `metadata` column to an existing installation's
+     * `vatly_refunds` table. Guarded so it is a safe no-op on a fresh
+     * install where the create migration already defines the column (order of
+     * same-timestamp published migrations is not guaranteed).
+     */
+    public function up(): void
+    {
+        if (! Schema::hasTable('vatly_refunds')) {
+            return;
+        }
+
+        if (Schema::hasColumn('vatly_refunds', 'metadata')) {
+            return;
+        }
+
+        Schema::table('vatly_refunds', function (Blueprint $table) {
+            $table->json('metadata')->nullable()->after('customer_id');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        if (! Schema::hasTable('vatly_refunds')) {
+            return;
+        }
+
+        if (! Schema::hasColumn('vatly_refunds', 'metadata')) {
+            return;
+        }
+
+        Schema::table('vatly_refunds', function (Blueprint $table) {
+            $table->dropColumn('metadata');
+        });
+    }
+};

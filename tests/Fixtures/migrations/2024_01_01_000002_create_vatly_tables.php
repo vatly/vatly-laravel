@@ -74,6 +74,7 @@ return new class extends Migration
             $table->json('tax_summary')->nullable();
             $table->string('currency');
             $table->string('customer_id')->nullable()->index();
+            $table->json('metadata')->nullable();
             $table->boolean('testmode');
             $table->timestamps();
         });
