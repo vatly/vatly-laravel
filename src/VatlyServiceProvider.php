@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Vatly\Laravel;
 
+use Composer\InstalledVersions;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 use Vatly\Fluent\Contracts\ChargebackRepositoryInterface;
@@ -48,17 +49,23 @@ class VatlyServiceProvider extends ServiceProvider
         $this->app->bind(EventDispatcherInterface::class, LaravelEventDispatcher::class);
 
         // Composition root — fluent does the wiring; we just hand it the impls.
-        $this->app->singleton(Vatly::class, fn ($app) => new Vatly(new Wiring(
-            config: $app->make(ConfigurationInterface::class),
-            subscriptions: $app->make(SubscriptionRepositoryInterface::class),
-            orders: $app->make(OrderRepositoryInterface::class),
-            orderLines: $app->make(OrderLineRepositoryInterface::class),
-            refunds: $app->make(RefundRepositoryInterface::class),
-            chargebacks: $app->make(ChargebackRepositoryInterface::class),
-            webhookCalls: $app->make(WebhookCallRepositoryInterface::class),
-            events: $app->make(EventDispatcherInterface::class),
-            customerBindings: $app->make(CustomerBindingRepository::class),
-        )));
+        $this->app->singleton(Vatly::class, function ($app) {
+            $vatly = new Vatly(new Wiring(
+                config: $app->make(ConfigurationInterface::class),
+                subscriptions: $app->make(SubscriptionRepositoryInterface::class),
+                orders: $app->make(OrderRepositoryInterface::class),
+                orderLines: $app->make(OrderLineRepositoryInterface::class),
+                refunds: $app->make(RefundRepositoryInterface::class),
+                chargebacks: $app->make(ChargebackRepositoryInterface::class),
+                webhookCalls: $app->make(WebhookCallRepositoryInterface::class),
+                events: $app->make(EventDispatcherInterface::class),
+                customerBindings: $app->make(CustomerBindingRepository::class),
+            ));
+
+            $vatly->getApiClient()->addVersionString('vatly/vatly-laravel/'.self::installedVersion());
+
+            return $vatly;
+        });
 
         // WebhookProcessor is reached by the inbound controller via the
         // container; bind it as a thin proxy to the composition root.
@@ -66,6 +73,19 @@ class VatlyServiceProvider extends ServiceProvider
             WebhookProcessor::class,
             fn ($app) => $app->make(Vatly::class)->webhookProcessor(),
         );
+    }
+
+    /**
+     * This package's installed version, as Composer recorded it (`0.7.0-alpha.28`),
+     * for its `User-Agent` token.
+     */
+    private static function installedVersion(): string
+    {
+        if (! class_exists(InstalledVersions::class) || ! InstalledVersions::isInstalled('vatly/vatly-laravel')) {
+            return 'unknown';
+        }
+
+        return ltrim((string) InstalledVersions::getPrettyVersion('vatly/vatly-laravel'), 'v');
     }
 
     public function boot(): void
