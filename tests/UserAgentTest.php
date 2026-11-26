@@ -68,11 +68,12 @@ class UserAgentTest extends BaseTestCase
 
     public function test_the_user_agent_ends_with_this_packages_name_and_installed_version(): void
     {
-        $userAgent = $this->app->make(Vatly::class)->getApiClient()->performHttpCall('GET', 'user-agent')->userAgent;
+        $client = $this->app->make(Vatly::class)->getApiClient();
+        $userAgent = $client->performHttpCall('GET', 'user-agent')->userAgent;
 
         $version = ltrim((string) InstalledVersions::getPrettyVersion('vatly/vatly-laravel'), 'v');
         $this->assertNotSame('', $version);
-        $this->assertStringContainsString(' PHP/'.phpversion().' Curl/* ', $userAgent);
+        $this->assertSame(implode(' ', $client->getVersionStrings()), $userAgent);
         $this->assertStringEndsWith(' vatly/vatly-laravel/'.$version, $userAgent);
         $this->assertSame(1, substr_count($userAgent, 'vatly/vatly-laravel/'));
     }
